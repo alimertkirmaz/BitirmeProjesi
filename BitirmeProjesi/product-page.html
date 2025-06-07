@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AristoCart - Ürün Detayı">
+    <title>AristoCart - Ürün Detayı</title>
+    <link rel="icon" type="image/png" href="images/ar2.png">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Firebase yapılandırması
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYRT1tz8QMog2Vd9oC-rA3Fne6AADKOQ0",
+            authDomain: "bitirmeprojesi-de1e8.firebaseapp.com",
+            projectId: "bitirmeprojesi-de1e8",
+            storageBucket: "bitirmeprojesi-de1e8.appspot.com",
+            messagingSenderId: "578825018900",
+            appId: "1:578825018900:web:b2fb992ecb7a7bc301d101"
+        };
+        
+        // Firebase'i başlat
+        firebase.initializeApp(firebaseConfig);
+    </script>
+    <style>
+        /* Popup Stilleri - AristoCart Tema */
+        .popup {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            overflow: auto;
+            animation: fadeIn 0.3s;
+        }
+        
+        .popup-content {
+            background-color: #1A1A1A;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 0;
+            width: 380px;
+            max-width: 90%;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(201, 162, 39, 0.4);
+            animation: fadeAndScale 0.3s;
+            border: 1px solid #c9a227;
+        }
+        
+        .popup-header {
+            padding: 15px 20px;
+            background-color: #000000;
+            border-bottom: 1px solid #c9a227;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .popup-header h3 { 
+            margin: 0; 
+            font-size: 18px; 
+            color: #c9a227; 
+            font-weight: bold; 
+            letter-spacing: 0.5px; 
+            font-family: 'Playfair Display', serif; 
+        }
+        
+        .close-popup {
+            color: #c9a227;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+        
+        .close-popup:hover {
+            color: #B08C1E;
+        }
+        
+        .popup-body {
+            padding: 20px;
+            color: #ffffff;
+            font-size: 14px;
+            line-height: 1.4;
+            text-align: center;
+        }
+        
+        .popup-footer {
+            padding: 15px 20px;
+            background-color: #000000;
+            border-top: 1px solid #c9a227;
+            border-radius: 0 0 10px 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .popup-btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 4px;
+            background-color: #c9a227;
+            color: #000000;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(201, 162, 39, 0.3);
+        }
+        
+        .popup-btn:hover {
+            background-color: #B08C1E;
+            box-shadow: 0 3px 8px rgba(201, 162, 39, 0.4);
+        }
+        
+        .popup-btn-secondary {
+            background-color: #222222;
+            color: #c9a227;
+            border: 1px solid #c9a227;
+        }
+        
+        .popup-btn-secondary:hover {
+            background-color: #333333;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeAndScale {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        .nav-links {
+            margin-right: 55px;
+        }
+
+        .cart-item {
+            position: relative;
+        }
+        .cart-item-total {
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            color: #c9a227;
+            font-weight: bold;
+            background: transparent;
+            pointer-events: none;
+        }
+
+        /* Ürün Sayfası Özel Stilleri */
+        .product-container {
+            margin-top: 100px;
+            margin-bottom: 10px;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            background: var(--black);
+            border-radius: 8px;
+            border: 1px solid rgba(201, 162, 39, 0.1);
+            max-width: 1500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .product-gallery {
+            position: relative;
+        }
+
+        .main-image {
+            width: 100%;
+            aspect-ratio: 4/3;
+            overflow: hidden;
+            border-radius: 8px;
+            border: 1px solid rgba(201, 162, 39, 0.1);
+        }
+
+        .main-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .thumbnail-images {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            overflow-x: auto;
+            padding-bottom: 1rem;
+        }
+
+        .thumbnail-images img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid rgba(201, 162, 39, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .thumbnail-images img:hover {
+            border-color: var(--gold);
+        }
+
+        .product-info {
+            padding: 1rem;
+        }
+
+        .product-info h1 {
+            font-family: 'Playfair Display', serif;
+            color: var(--gold);
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+
+        .product-price {
+            font-size: 1.5rem;
+            color: var(--gold);
+        }
+
+        .variant-options {
+            margin-bottom: 2rem;
+        }
+
+        .variant-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .variant-group h3 {
+            color: var(--gold);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .variant-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .variant-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--gold);
+            background: transparent;
+            color: var(--gold);
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .variant-btn:hover:not(:disabled) {
+            background: var(--gold);
+            color: var(--black);
+        }
+
+        .variant-btn.selected {
+            background: var(--gold);
+            color: var(--black);
+        }
+
+        .variant-btn.out-of-stock {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #666;
+            color: #666;
+        }
+
+        .stock-status {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: var(--gold);
+        }
+
+        .variant-btn:hover:not(:disabled) {
+            background: var(--gold);
+            color: var(--black);
+        }
+
+        .variant-btn.selected {
+            background: var(--gold);
+            color: var(--black);
+        }
+
+        .variant-btn.out-of-stock {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #666;
+            color: #666;
+        }
+
+        .quantity-selector {
+            margin-bottom: 2rem;
+        }
+
+        .quantity-selector label {
+            display: block;
+            color: var(--gold);
+            margin-bottom: 0.5rem;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        /* Remove number input spinners */
+        input[type='number'] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+        
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .quantity-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--gold);
+            background: transparent;
+            color: var(--gold);
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .quantity-btn:hover {
+            background: var(--gold);
+            color: var(--black);
+        }
+
+        #quantity {
+            width: 60px;
+            text-align: center;
+            padding: 0.5rem;
+            border: 1px solid var(--gold);
+            background: transparent;
+            color: var(--gold);
+            border-radius: 4px;
+        }
+
+        .add-to-cart-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--gold);
+            color: var(--black);
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .add-to-cart-btn:hover {
+            background: var(--dark-gold);
+            transform: translateY(-2px);
+        }
+
+        .product-description {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(201, 162, 39, 0.1);
+        }
+
+        .product-description h3 {
+            color: var(--gold);
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .product-description p {
+            color: #fff;
+            line-height: 1.6;
+        }
+        /* Sepet Ürün Miktar Butonları */
+        .cart-item-quantity {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cart-item-quantity button {
+            background: black;
+            color: var(--gold);
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cart-item-quantity button:hover {
+            background: var(--gold);
+            color: var(--black);
+        }
+
+        .cart-item-quantity span {
+            color: var(--gold);
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* Sepet Ürün Silme Butonu */
+        .remove-item {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+            left: 320px;
+            width: 40px;
+        }
+
+        .cart-items {
+            position: relative;
+            z-index: 1;
+        }
+
+        .cart-item-quantity {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .cart-item-quantity .quantity-btn {
+            background: black;
+            border: none;
+            color: var(--gold);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <a href="index.html" class="logo">
+                    <img src="images/ar2.png" alt="AristoCart" class="logo-icon">
+                    ARISTOCART
+                </a>
+                <ul class="nav-links">
+                    <li><a href="index.html">Ana Sayfa</a></li>
+                    <li class="category-dropdown">
+                        <a href="#categories">Kategoriler</a>
+                        <div class="category-menu">
+                            <ul class="category-list">
+                                <li><a href="categories.html?category=bilgisayar">Bilgisayar</a></li>
+                                <li><a href="categories.html?category=bilgisayar-bileseni">Bilgisayar Bileşeni</a></li>
+                                <li><a href="categories.html?category=oyuncu-ekipmani">Oyuncu Ekipmanı</a></li>
+                                <li><a href="categories.html?category=kamera">Kamera</a></li>
+                                <li><a href="categories.html?category=yazici">Yazıcı</a></li>
+                                <li><a href="categories.html?category=arac-ekipmani">Araç Ekipmanı</a></li>
+                                <li><a href="categories.html?category=akilli-telefon">Akıllı Telefon</a></li>
+                                <li><a href="categories.html?category=tablet">Tablet</a></li>
+                                <li><a href="categories.html?category=giyilebilir-teknoloji">Giyilebilir Teknoloji</a></li>
+                                <li><a href="categories.html?category=ev-elektronigi">Ev Elektroniği</a></li>
+                                <li><a href="categories.html?category=ev-sinema-ses">Ev Sinema ve Ses Sistemi</a></li>
+                                <li><a href="categories.html?category=beyaz-esya">Beyaz Eşya</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li><a href="#featured">Öne Çıkanlar</a></li>
+                    <li>
+                        <a href="#" class="cart-link">
+                            <span class="cart-count">0</span>
+                            Sepetim
+                        </a>
+                    </li>
+                    <li><a href="login.html" class="login-link">Giriş Yap</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+    <div class="product-container">
+    <div class="product-gallery">
+        <div class="main-image">
+            <img id="mainImage" src="" alt="Ürün Görseli">
+        </div>
+        <div class="thumbnail-images" id="thumbnailContainer">
+            <!-- Küçük resimler JavaScript ile eklenecek -->
+        </div>
+    </div>
+
+    <div class="product-info">
+        <h1 id="productName"></h1>
+        <div class="product-price">
+            <span id="productPrice"></span>
+        </div>
+    <div class="product-description">
+        <h3>Ürün Açıklaması</h3>
+        <p style="margin-bottom: 16px;" id="productDescription"></p>
+    </div>
+    <div class="variant-options">
+        <!-- Varyant seçenekleri dinamik olarak eklenecek -->
+    </div>
+    <div class="quantity-selector">
+        <label for="quantity">Adet:</label>
+        <div class="quantity-controls">
+            <button class="quantity-btn" id="decreaseBtn">-</button>
+            <input type="number" id="quantity" value="1" min="1" max="10">
+            <button class="quantity-btn" id="increaseBtn">+</button>
+        </div>
+        <div id="stock-warning" style="color: red; margin-top: 5px; display: none; font-size: 0.95em;"></div>
+    </div>
+    <div class="add-to-cart-section">
+        <button id="addToCartBtn" class="add-to-cart-btn">
+            <i class="fas fa-shopping-cart"></i>
+            Sepete Ekle
+        </button>
+    </div>
+</div>
+        </div>
+    </div>
+    <!-- Stok Uyarı Popup -->
+    <div id="stock-popup" class="popup">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3><b>Stok Uyarısı</b></h3>
+                <span class="close-popup">&times;</span>
+            </div>
+            <div class="popup-body">
+                <p id="stock-popup-message"></p>
+            </div>
+            <div class="popup-footer">
+                <button id="stock-popup-ok" class="popup-btn">Tamam</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stok Uyarı Popup -->
+    <div id="stock-popup" class="popup">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3><b>Stok Uyarısı</b></h3>
+                <span class="close-popup">&times;</span>
+            </div>
+            <div class="popup-body">
+                <p id="stock-popup-message"></p>
+            </div>
+            <div class="popup-footer">
+                <button id="stock-popup-ok" class="popup-btn">Tamam</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sepete Ekleme Onay Popup -->
+    <div id="add-to-cart-popup" class="popup">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3>Sepete Ekle</h3>
+                <span class="close-popup">&times;</span>
+            </div>
+            <div class="popup-body">
+                <p id="add-to-cart-popup-message"></p>
+            </div>
+            <div class="popup-footer">
+                <button id="add-to-cart-popup-cancel" class="popup-btn popup-btn-secondary">İptal</button>
+                <button id="add-to-cart-popup-confirm" class="popup-btn">Ekle</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sepeti Temizle Onay Popup -->
+    <div id="clear-cart-popup" class="popup">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3><b>Sepeti Temizle</b></h3>
+                <span class="close-popup">&times;</span>
+            </div>
+            <div class="popup-body">
+                <p>Sepetinizdeki tüm ürünleri silmek <br>istediğinize emin misiniz?</p>
+            </div>
+            <div class="popup-footer">
+                <button id="clear-cart-cancel" class="popup-btn popup-btn-secondary">Vazgeç</button>
+                <button id="clear-cart-confirm" class="popup-btn">Temizle</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sepet Yan Menüsü -->
+    <div class="cart-sidebar">
+        <div class="cart-header">
+            <h3>Sepetim</h3>
+            <div class="cart-actions">
+                <button class="clear-cart">Sepeti Temizle</button>
+                <button class="close-cart">&times;</button>
+            </div>
+        </div>
+        <div class="cart-items">
+            <!-- Sepet ürünleri buraya gelecek -->
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <strong>Toplam:</strong>
+                <strong class="total-amount">0 TL</strong>
+            </div>
+            <button class="btn-checkout" onclick="location.href='cart.html'">Alışveriş Sepetime Git</button>
+        </div>
+    </div>
+    <div class="cart-overlay"></div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>ARISTOCART</h4>
+                    <p>Lüks alışverişin adresi</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Hızlı Linkler</h4>
+                    <ul>
+                        <li><a href="#categories">Kategoriler</a></li>
+                        <li><a href="#featured">Öne Çıkanlar</a></li>
+                        <li><a href="#">Hakkımızda</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>İletişim</h4>
+                    <p>Email: info@aristocart.com</p>
+                    <p>Tel: +90 212 555 55 55</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Önce Firebase modülleri yüklenmeli -->
+    <script>
+        // Sepeti temizleme fonksiyonu - Sadece popup onayından sonra çağrılır
+        function htmlClearCart() {
+            // Sepet temizleniyor
+            // Sepeti temizle
+            localStorage.setItem('cart', JSON.stringify([]));
+            // Arayüzü güncelle
+            if (typeof updateLocalCartUI === 'function') {
+                updateLocalCartUI();
+            } else {
+                // Alternatif güncelleme yöntemi
+                const cartItemsContainer = document.querySelector('.cart-items');
+                if (cartItemsContainer) {
+                    cartItemsContainer.innerHTML = '';
+                }
+            }
+            if (typeof updateCartCount === 'function') {
+                updateCartCount();
+            } else {
+                // Alternatif güncelleme yöntemi
+                const cartCountElement = document.querySelector('.cart-count');
+                if (cartCountElement) {
+                    cartCountElement.textContent = '0';
+                }
+            }
+            // Sepet temizlendi
+        }
+        
+        // Popup'ları ayarla
+        function setupPopups() {
+            // Sepeti Temizle butonu için event listener
+            const clearCartBtn = document.querySelector('.clear-cart');
+            if (clearCartBtn) {
+                
+                clearCartBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation(); // Event'in yayılmasını durdur
+                    // Sepeti Temizle butonuna tıklandı
+                    // Popup'u göster
+                    const clearCartPopup = document.getElementById('clear-cart-popup');
+                    if (clearCartPopup) {
+                        clearCartPopup.style.display = 'block';
+                    }
+                });
+            }
+            
+            // Sepeti Temizle Popup - Temizle butonu
+            const confirmBtn = document.getElementById('clear-cart-confirm');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', function() {
+                    // Temizle butonuna tıklandı
+                    // Sepeti temizle (doğrudan localStorage'a erişerek)
+                    localStorage.setItem('cart', JSON.stringify([]));
+                    
+                    // Arayüzü güncelle
+                    const cartItemsContainer = document.querySelector('.cart-items');
+                    if (cartItemsContainer) {
+                        cartItemsContainer.innerHTML = '';
+                    }
+                    
+                    // Sepet sayacını güncelle
+                    const cartCountElement = document.querySelector('.cart-count');
+                    if (cartCountElement) {
+                        cartCountElement.textContent = '0';
+                    }
+                    
+                    // Sepet başarıyla temizlendi
+                    
+                    // Popup'u kapat
+                    const clearCartPopup = document.getElementById('clear-cart-popup');
+                    if (clearCartPopup) {
+                        clearCartPopup.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Sepeti Temizle Popup - Vazgeç butonu
+            const cancelBtn = document.getElementById('clear-cart-cancel');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function() {
+                    // Sepet temizleme iptal edildi
+                    // Sadece popup'u kapat
+                    const clearCartPopup = document.getElementById('clear-cart-popup');
+                    if (clearCartPopup) {
+                        clearCartPopup.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Sepeti Temizle Popup - Kapat butonu
+            const closeBtn = document.querySelector('#clear-cart-popup .close-popup');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    // Sepet temizleme popup'u kapatıldı
+                    // Sadece popup'u kapat
+                    const clearCartPopup = document.getElementById('clear-cart-popup');
+                    if (clearCartPopup) {
+                        clearCartPopup.style.display = 'none';
+                    }
+                });
+            }
+        }
+        
+        // Sayfa yüklendiğinde çalışacak kodlar
+        document.addEventListener('DOMContentLoaded', () => {
+            // Sepet linki için click event listener
+            document.querySelectorAll('.cart-link, .cart-icon').forEach(element => {
+                if (element) {
+                    element.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        toggleCart();
+                    });
+                }
+            });
+            
+            // Sepet kapatma butonu
+            const closeCartBtn = document.querySelector('.close-cart');
+            if (closeCartBtn) {
+                closeCartBtn.addEventListener('click', closeCart);
+            }
+            
+            // Overlay'e tıklandığında sepeti kapat
+            const cartOverlay = document.querySelector('.cart-overlay');
+            if (cartOverlay) {
+                cartOverlay.addEventListener('click', closeCart);
+            }
+            
+            // Sayfa yüklendi
+        });
+        
+        // Sayfa yüklendikten sonra popup'ları ayarla
+        window.addEventListener('load', setupPopups);
+    </script>
+    <script src="product-page.js"></script>
+    <!-- Sepet işlevselliği product-page.js'de yönetiliyor -->
+    <script>
+        // Sayfa yüklendiğinde sepet sayacını güncelle
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCartCount();
+        });
+    </script>
+</body>
+</html>

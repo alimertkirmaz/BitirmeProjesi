@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Kategoriler | AristoCart">
+    <title>Kategoriler | AristoCart</title>
+    <link rel="icon" type="image/png" href="images/ar2.png">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    
+    
+    
+    <style>
+        .cart-item {
+            position: relative;
+        }
+
+        .cart-item-total {
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            color: #c9a227;
+            font-weight: bold;
+            background: transparent;
+            pointer-events: none;
+        }
+
+        /* Sepet Ürün Miktar Butonları */
+        .cart-item-quantity {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .cart-item-quantity button {
+            background: black;
+            border: none;
+            color: var(--gold);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cart-item-quantity button:hover {
+            background: var(--gold);
+            color: var(--black);
+        }
+
+        .cart-item-quantity span {
+            color: var(--gold);
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .remove-item {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+            left: 320px;
+            width: 40px;
+        }
+
+        :root {
+            --gold: #c9a227;
+            --dark-gold: #B08C1E;
+            --black: #000000;
+            --dark-gray: #1A1A1A;
+            --light-gray: #333333;
+        }
+        
+        .categories-container {
+            padding: 2rem;
+            margin-top: 65px;
+        }
+        
+        .category-title {
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 35px;
+            font-weight: 700;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 3px solid var(--gold);
+            padding-bottom: 1rem;
+        }
+        
+        .category-navigation {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .category-btn {
+            padding: 0.75rem 1.5rem;
+            border: 1px solid var(--gold);
+            border-radius: 4px;
+            background: transparent;
+            color: var(--gold);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Playfair Display', serif;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+        
+        .category-btn:hover {
+            background: var(--gold);
+            color: var(--black);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(201, 162, 39, 0.3);
+        }
+        
+        .category-btn.active {
+            background: var(--gold);
+            color: var(--black);
+            border-color: var(--gold);
+            box-shadow: 0 4px 12px rgba(201, 162, 39, 0.3);
+        }
+        
+        .category-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 25px;
+            margin-bottom: 25px;
+        }
+        
+        .product-card {
+            border: 1px solid var(--gold);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background: rgba(0, 0, 0, 0.9);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(201, 162, 39, 0.2);
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .product-details {
+            padding: 1.5rem;
+        }
+        
+        .product-title {
+            margin: 0;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            font-family: 'Playfair Display', serif;
+            color: var(--gold);
+        }
+        
+        .product-price {
+            font-weight: bold;
+            color: var(--gold);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .btn-add-cart {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--gold);
+            color: var(--black);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+        
+        .btn-add-cart:hover {
+            background: var(--dark-gold);
+            transform: translateY(-2px);
+        }
+        
+        .variant-group {
+            margin-bottom: 0.5rem;
+        }
+        
+        .variant-group label {
+            display: block;
+            margin-bottom: 0.3rem;
+            color: #888;
+        }
+        
+        .variant-select {
+            width: 100%;
+            padding: 0.5rem;
+            background-color: #1a1a1a;
+            border: 1px solid rgba(201, 162, 39, 0.3);
+            border-radius: 4px;
+            color: #c9a227;
+            cursor: pointer;
+        }
+        
+        .variant-select:focus {
+            outline: none;
+            border-color: #c9a227;
+        }
+    
+        /* Popup Stilleri - AristoCart Tema */
+        .popup {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    overflow: auto;
+}
+.popup-content {
+    background-color: #1A1A1A;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 0;
+    width: 380px;
+    max-width: 90%;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(201, 162, 39, 0.4);
+    border: 1px solid #c9a227;
+}
+        .popup-header {
+            padding: 15px 20px;
+            background-color: #000000;
+            border-bottom: 1px solid #c9a227;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .popup-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #c9a227;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            font-family: 'Playfair Display', serif;
+        }
+        .close-popup {
+            color: #c9a227;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+        .close-popup:hover {
+            color: #B08C1E;
+        }
+        .popup-body {
+            padding: 20px;
+            color: #ffffff;
+            font-size: 14px;
+            line-height: 1.4;
+            text-align: center;
+        }
+        .popup-footer {
+            padding: 15px 20px;
+            background-color: #000000;
+            border-top: 1px solid #c9a227;
+            border-radius: 0 0 10px 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .popup-btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 4px;
+            background-color: #c9a227;
+            color: #000;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .popup-btn-secondary {
+            background-color: #333;
+            color: #fff;
+        }
+        .popup-btn:hover {
+            background-color: #B08C1E;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div id="auth-loading" style="display:flex;justify-content:center;align-items:center;height:100vh;color:#c9a227;font-size:1.5rem;">Yükleniyor...</div>
+    
+    <!-- Navbar -->
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <a href="customer-panel.html" class="logo">
+                    <img src="images/ar2.png" alt="AristoCart" class="logo-icon">
+                    ARISTOCART
+                </a>
+                <ul class="nav-links">
+                    <li><a href="customer-panel.html">Ana Sayfa</a></li>
+                    <li class="category-dropdown">
+                        <a href="customer-panel.html#categories">Kategoriler</a>
+                        <div class="category-menu">
+                            <ul class="category-list">
+                                <li><a href="customer-categories.html?category=bilgisayar">Bilgisayar</a></li>
+                                <li><a href="customer-categories.html?category=bilgisayar-bileseni">Bilgisayar Bileşeni</a></li>
+                                <li><a href="customer-categories.html?category=oyuncu-ekipmani">Oyuncu Ekipmanı</a></li>
+                                <li><a href="customer-categories.html?category=kamera">Kamera</a></li>
+                                <li><a href="customer-categories.html?category=yazici">Yazıcı</a></li>
+                                <li><a href="customer-categories.html?category=arac-ekipmani">Araç Ekipmanı</a></li>
+                                <li><a href="customer-categories.html?category=akilli-telefon">Akıllı Telefon</a></li>
+                                <li><a href="customer-categories.html?category=tablet">Tablet</a></li>
+                                <li><a href="customer-categories.html?category=giyilebilir-teknoloji">Giyilebilir Teknoloji</a></li>
+                                <li><a href="customer-categories.html?category=ev-elektronigi">Ev Elektroniği</a></li>
+                                <li><a href="customer-categories.html?category=ev-sinema-ses">Ev Sinema ve Ses Sistemi</a></li>
+                                <li><a href="customer-categories.html?category=beyaz-esya">Beyaz Eşya</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li><a href="customer-panel.html#featured">Öne Çıkanlar</a></li>
+                    <li>
+                        <a href="#" class="cart-link">
+                            <span class="cart-count">0</span>
+                            Sepetim
+                        </a>
+                    </li>
+                    <li class="customer-dropdown">
+                        <a href="#" class="customer-name" id="customerName">Müşteri Adı</a>
+                        <div class="customer-menu">
+                            <ul class="customer-list">
+                                <li><a href="customer-section.html#account">Hesap Bilgilerim</a></li>
+                                <li><a href="customer-section.html#addresses">Adreslerim</a></li>
+                                <li><a href="customer-section.html#orders">Siparişlerim</a></li>
+                                <li><a href="customer-section.html#favorites">Favorilerim</a></li>
+                                <li><a href="customer-section.html#notifications">Bildirimlerim</a></li>
+                                <li><a href="customer-section.html#saved-carts">Kayıtlı Sepetlerim</a></li>
+                                <li><a href="customer-section.html#support">Destek & SSS</a></li>
+                                <li><a href="index.html" onclick="localStorage.removeItem('currentUser')">Çıkış Yap</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="categories-container">
+        <div class="container">
+            <div class="category-navigation">
+                <button class="category-btn" data-category="bilgisayar">Bilgisayar</button>
+                <button class="category-btn" data-category="bilgisayar-bileseni">Bilgisayar Bileşeni</button>
+                <button class="category-btn" data-category="oyuncu-ekipmani">Oyuncu Ekipmanı</button>
+                <button class="category-btn" data-category="kamera">Kamera</button>
+                <button class="category-btn" data-category="yazici">Yazıcı</button>
+                <button class="category-btn" data-category="arac-ekipmani">Araç Ekipmanı</button>
+                <button class="category-btn" data-category="akilli-telefon">Akıllı Telefon</button>
+                <button class="category-btn" data-category="tablet">Tablet</button>
+                <button class="category-btn" data-category="giyilebilir-teknoloji">Giyilebilir Teknoloji</button>
+                <button class="category-btn" data-category="ev-elektronigi">Ev Elektroniği</button>
+                <button class="category-btn" data-category="ev-sinema-ses">Ev Sinema ve Ses Sistemi</button>
+                <button class="category-btn" data-category="beyaz-esya">Beyaz Eşya</button>
+            </div>
+            <h1 class="category-title" id="categoryTitle">Kategoriler</h1>
+            <div class="category-content">
+                <!-- Products will be loaded here dynamically -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Sepet Yan Menüsü -->
+    <div class="cart-sidebar">
+        <div class="cart-header">
+            <h3>Sepetim</h3>
+            <div class="cart-actions">
+                <button class="clear-cart">Sepeti Temizle</button>
+                <button class="close-cart">&times;</button>
+            </div>
+        </div>
+        <div class="cart-items">
+            <!-- Sepet ürünleri buraya gelecek -->
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <strong>Toplam:</strong>
+                <strong class="total-amount">0 TL</strong>
+            </div>
+            <button id="save-cart-btn" class="btn-save-cart" style="width:100%;margin-bottom:10px;background:var(--gold);color:var(--black);border:none;border-radius:4px;padding:0.75rem;cursor:pointer;transition:all 0.3s ease;letter-spacing:1px;">
+    Sepetimi Kaydet
+</button>
+<button class="btn-checkout" onclick="location.href='customer-cart.html'">Alışveriş Sepetime Git</button>
+        </div>
+    </div>
+    <div class="cart-overlay"></div>
+
+<!-- Sepeti Temizle Popup -->
+<div id="clear-cart-popup" class="popup" style="display: none;">
+    <div class="popup-content">
+        <div class="popup-header">
+            <h3><b>Sepeti Temizle</b></h3>
+            <span class="close-popup">&times;</span>
+        </div>
+        <div class="popup-body">
+            <p>Sepetinizdeki tüm ürünleri silmek <br>istediğinize emin misiniz?</p>
+        </div>
+        <div class="popup-footer">
+            <button id="clear-cart-cancel" class="popup-btn popup-btn-secondary">Vazgeç</button>
+            <button id="clear-cart-confirm" class="popup-btn">Temizle</button>
+        </div>
+    </div>
+</div>
+
+    <script type="module">
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { app } from "./firebase-config.js";
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Yükleniyor ekranını göster
+            const authLoading = document.getElementById('auth-loading');
+            const pageContent = Array.from(document.body.children).filter(el => el.id !== 'auth-loading');
+            pageContent.forEach(el => el.style.display = 'none');
+            const customerNameElement = document.getElementById('customerName');
+            // Kullanıcı oturum durumunu kontrol et
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                if (user && customerNameElement) {
+                    setTimeout(() => {
+                        authLoading.style.display = 'none';
+                        pageContent.forEach(el => el.style.display = '');
+                    }, 1000);
+                    try {
+                        const userDocRef = doc(db, "users", user.uid);
+                        const userDoc = await getDoc(userDocRef);
+                        if (userDoc.exists()) {
+                            const userData = userDoc.data();
+                            customerNameElement.textContent = userData.firstName && userData.lastName ? `${userData.firstName} ${userData.lastName}` : user.email.split('@')[0];
+                        } else {
+                            customerNameElement.textContent = user.email.split('@')[0];
+                        }
+                    } catch (error) {
+                        console.error("Kullanıcı bilgileri alınırken hata:", error);
+                        customerNameElement.textContent = user.email.split('@')[0];
+                    }
+                }
+            });
+        });
+    </script>
+    
+    <!-- Categories.js modül olarak yükle -->
+    <script type="module" src="categories-new.js"></script>
+    <script type="module" src="customer-cart.js"></script>
+    <script type="module" src="logout.js"></script>
+    <script type="module" src="favorites.js"></script>
+<script>
+// Sepeti Temizle Popup açma ve kontrol
+const clearCartBtn = document.querySelector('.clear-cart');
+const clearCartPopup = document.getElementById('clear-cart-popup');
+const clearCartCancel = document.getElementById('clear-cart-cancel');
+const clearCartConfirm = document.getElementById('clear-cart-confirm');
+const closePopupBtn = clearCartPopup ? clearCartPopup.querySelector('.close-popup') : null;
+
+function closeClearCartPopup() {
+    if (clearCartPopup) clearCartPopup.style.display = 'none';
+}
+
+if (clearCartBtn && clearCartPopup) {
+    clearCartBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        clearCartPopup.style.display = 'block';
+    });
+}
+if (clearCartCancel) clearCartCancel.addEventListener('click', closeClearCartPopup);
+if (closePopupBtn) closePopupBtn.addEventListener('click', closeClearCartPopup);
+
+if (clearCartConfirm) {
+    clearCartConfirm.addEventListener('click', async function() {
+        closeClearCartPopup();
+        // Burada Firestore veya localStorage sepet temizleme fonksiyonunu çağırabilirsiniz
+        // Örnek: await clearCart();
+        // UI güncelleme fonksiyonlarını da ekleyin
+        if (typeof updateCartUI === 'function') {
+            await updateCartUI();
+        }
+        if (typeof updateCartCount === 'function') {
+            await updateCartCount();
+        }
+    });
+}
+// Tanımlar yukarıda zaten mevcut, tekrar tanımlamaya gerek yok.
+
+if (clearCartBtn && clearCartPopup) {
+    clearCartBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        clearCartPopup.style.display = 'block';
+    });
+}
+
+function closeClearCartPopup() {
+    clearCartPopup.style.display = 'none';
+}
+
+if (clearCartCancel) clearCartCancel.addEventListener('click', closeClearCartPopup);
+if (closePopupBtn) closePopupBtn.addEventListener('click', closeClearCartPopup);
+
+if (clearCartConfirm) {
+    clearCartConfirm.addEventListener('click', function() {
+        closeClearCartPopup();
+        // Sepeti temizleme fonksiyonunu çağır
+        if (typeof clearCart === 'function') {
+            clearCart();
+        } else if (window.clearCart) {
+            window.clearCart();
+        } else {
+            // localStorage tabanlı ise
+            localStorage.removeItem('cart');
+            if (typeof updateCartUI === 'function') updateCartUI();
+            if (typeof updateCartCount === 'function') updateCartCount();
+        }
+    });
+}
+</script>
+</body>
+</html>

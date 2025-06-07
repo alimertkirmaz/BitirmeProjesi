@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Kategoriler | AristoCart">
+    <title>Kategoriler | AristoCart</title>
+    <link rel="icon" type="image/png" href="images/ar2.png">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Firebase yapılandırması
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYRT1tz8QMog2Vd9oC-rA3Fne6AADKOQ0",
+            authDomain: "bitirmeprojesi-de1e8.firebaseapp.com",
+            projectId: "bitirmeprojesi-de1e8",
+            storageBucket: "bitirmeprojesi-de1e8.firebasestorage.app",
+            messagingSenderId: "578825018900",
+            appId: "1:578825018900:web:b2fb992ecb7a7bc301d101"
+        };
+
+        // Firebase'i başlat
+        firebase.initializeApp(firebaseConfig);
+    </script>
+    <style>
+        .nav-links {
+            margin-right: 55px;
+        }
+
+        .cart-item {
+            position: relative;
+        }
+        .cart-item-total {
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            color: #c9a227;
+            font-weight: bold;
+            background: transparent;
+            pointer-events: none;
+        }
+
+        /* Sepet Ürün Miktar Butonları */
+        .cart-item-quantity {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .cart-item-quantity button {
+            background: black;
+            border: none;
+            color: var(--gold);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cart-item-quantity button:hover {
+            background: var(--gold);
+            color: var(--black);
+        }
+
+        .cart-item-quantity span {
+            color: var(--gold);
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .remove-item {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+            left: 320px;
+            width: 40px;
+        }
+        
+        /* Popup Stilleri - AristoCart Tema */
+        .popup {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            overflow: auto;
+            animation: fadeIn 0.3s;
+        }
+        
+        .popup-content {
+            background-color: #1A1A1A;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 0;
+            width: 380px;
+            max-width: 90%;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(201, 162, 39, 0.4);
+            animation: fadeAndScale 0.3s;
+            border: 1px solid #c9a227;
+        }
+        
+        .popup-header {
+            padding: 15px 20px;
+            background-color: #000000;
+            border-bottom: 1px solid #c9a227;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .popup-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #c9a227;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .close-popup {
+            color: #c9a227;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+        
+        .close-popup:hover {
+            color: #B08C1E;
+        }
+        
+        .popup-body {
+            padding: 20px;
+            color: #ffffff;
+            font-size: 14px;
+            line-height: 1.4;
+            text-align: center;
+        }
+        
+        .popup-footer {
+            padding: 15px 20px;
+            background-color: #000000;
+            border-top: 1px solid #c9a227;
+            border-radius: 0 0 10px 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .popup-btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 4px;
+            background-color: #c9a227;
+            color: #000000;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(201, 162, 39, 0.3);
+        }
+        
+        .popup-btn:hover {
+            background-color: #B08C1E;
+            box-shadow: 0 3px 8px rgba(201, 162, 39, 0.4);
+        }
+        
+        .popup-btn-secondary {
+            background-color: #222222;
+            color: #c9a227;
+            border: 1px solid #c9a227;
+        }
+        
+        .popup-btn-secondary:hover {
+            background-color: #333333;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeAndScale {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        :root {
+            --gold: #c9a227;
+            --dark-gold: #B08C1E;
+            --black: #000000;
+            --dark-gray: #1A1A1A;
+            --light-gray: #333333;
+        }
+        
+        .categories-container {
+            padding: 2rem;
+            margin-top: 65px;
+        }
+        
+        .category-title {
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 35px;
+            font-weight: 700;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 3px solid var(--gold);
+            padding-bottom: 1rem;
+        }
+        
+        .category-navigation {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .category-btn {
+            padding: 0.75rem 1.5rem;
+            border: 1px solid var(--gold);
+            border-radius: 4px;
+            background: transparent;
+            color: var(--gold);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Playfair Display', serif;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+        
+        .category-btn:hover {
+            background: var(--gold);
+            color: var(--black);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(201, 162, 39, 0.3);
+        }
+        
+        .category-btn.active {
+            background: var(--gold);
+            color: var(--black);
+            border-color: var(--gold);
+            box-shadow: 0 4px 12px rgba(201, 162, 39, 0.3);
+        }
+        
+        .category-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 25px;
+            margin-bottom: 25px;
+        }
+        
+        .product-card {
+            border: 1px solid var(--gold);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background: rgba(0, 0, 0, 0.9);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(201, 162, 39, 0.2);
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .product-details {
+            padding: 1.5rem;
+        }
+        
+        .product-title {
+            margin: 0;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            font-family: 'Playfair Display', serif;
+            color: var(--gold);
+        }
+        
+        .product-price {
+            font-weight: bold;
+            color: var(--gold);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .btn-add-cart {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--gold);
+            color: var(--black);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+        
+        .btn-add-cart:hover {
+            background: var(--dark-gold);
+            transform: translateY(-2px);
+        }
+        
+        .variant-group {
+            margin-bottom: 0.5rem;
+        }
+        
+        .variant-group label {
+            display: block;
+            margin-bottom: 0.3rem;
+            color: #888;
+        }
+        
+        .variant-select {
+            width: 100%;
+            padding: 0.5rem;
+            background-color: #1a1a1a;
+            border: 1px solid rgba(201, 162, 39, 0.3);
+            border-radius: 4px;
+            color: #c9a227;
+            cursor: pointer;
+        }
+        
+        .variant-select:focus {
+            outline: none;
+            border-color: #c9a227;
+        }
+    </style>
+</head>
+<body>
+    <div id="auth-loading" style="display:flex;justify-content:center;align-items:center;height:100vh;color:#c9a227;font-size:1.5rem;">Yükleniyor...</div>
+    <!-- Navbar -->
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <a href="index.html" class="logo">
+                    <img src="images/ar2.png" alt="AristoCart" class="logo-icon">
+                    ARISTOCART
+                </a>
+                <ul class="nav-links">
+                    <li><a href="index.html">Ana Sayfa</a></li>
+                    <li class="category-dropdown">
+                        <a href="index.html#categories">Kategoriler</a>
+                        <div class="category-menu">
+                            <ul class="category-list">
+                                <li><a href="categories.html?category=bilgisayar">Bilgisayar</a></li>
+                                <li><a href="categories.html?category=bilgisayar-bileseni">Bilgisayar Bileşeni</a></li>
+                                <li><a href="categories.html?category=oyuncu-ekipmani">Oyuncu Ekipmanı</a></li>
+                                <li><a href="categories.html?category=kamera">Kamera</a></li>
+                                <li><a href="categories.html?category=yazici">Yazıcı</a></li>
+                                <li><a href="categories.html?category=arac-ekipmani">Araç Ekipmanı</a></li>
+                                <li><a href="categories.html?category=akilli-telefon">Akıllı Telefon</a></li>
+                                <li><a href="categories.html?category=tablet">Tablet</a></li>
+                                <li><a href="categories.html?category=giyilebilir-teknoloji">Giyilebilir Teknoloji</a></li>
+                                <li><a href="categories.html?category=ev-elektronigi">Ev Elektroniği</a></li>
+                                <li><a href="categories.html?category=ev-sinema-ses">Ev Sinema ve Ses Sistemi</a></li>
+                                <li><a href="categories.html?category=beyaz-esya">Beyaz Eşya</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li><a href="index.html#featured">Öne Çıkanlar</a></li>
+                    <li>
+                        <a href="cart.html" class="cart-link">
+                            <span class="cart-count">0</span>
+                            Sepetim
+                        </a>
+                    </li>
+                    <li><a href="login.html" class="login-link">Giriş Yap</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="categories-container">
+        <div class="container">
+            <div class="category-navigation">
+                <button class="category-btn" data-category="bilgisayar">Bilgisayar</button>
+                <button class="category-btn" data-category="bilgisayar-bileseni">Bilgisayar Bileşeni</button>
+                <button class="category-btn" data-category="oyuncu-ekipmani">Oyuncu Ekipmanı</button>
+                <button class="category-btn" data-category="kamera">Kamera</button>
+                <button class="category-btn" data-category="yazici">Yazıcı</button>
+                <button class="category-btn" data-category="arac-ekipmani">Araç Ekipmanı</button>
+                <button class="category-btn" data-category="akilli-telefon">Akıllı Telefon</button>
+                <button class="category-btn" data-category="tablet">Tablet</button>
+                <button class="category-btn" data-category="giyilebilir-teknoloji">Giyilebilir Teknoloji</button>
+                <button class="category-btn" data-category="ev-elektronigi">Ev Elektroniği</button>
+                <button class="category-btn" data-category="ev-sinema-ses">Ev Sinema ve Ses Sistemi</button>
+                <button class="category-btn" data-category="beyaz-esya">Beyaz Eşya</button>
+            </div>
+            <h1 class="category-title" id="categoryTitle">Kategoriler</h1>
+            <div class="category-content">
+                <!-- Products will be loaded here dynamically -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Sepet Yan Menüsü -->
+    <div class="cart-sidebar">
+        <div class="cart-header">
+            <h3>Sepetim</h3>
+            <div class="cart-actions">
+                <button class="clear-cart">Sepeti Temizle</button>
+                <button class="close-cart">&times;</button>
+            </div>
+        </div>
+        <div class="cart-items">
+            <!-- Sepet ürünleri buraya gelecek -->
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <strong>Toplam:</strong>
+                <strong class="total-amount">0 TL</strong>
+            </div>
+            <button class="btn-checkout" onclick="location.href='cart.html'">Alışveriş Sepetime Git</button>
+        </div>
+    </div>
+    <div class="cart-overlay"></div>
+
+<!-- Sepeti Temizle Popup -->
+<div id="clear-cart-popup" class="popup" style="display: none;">
+    <div class="popup-content">
+        <div class="popup-header">
+            <h3><b>Sepeti Temizle</b></h3>
+            <span class="close-popup">&times;</span>
+        </div>
+        <div class="popup-body">
+            <p>Sepetinizdeki tüm ürünleri silmek <br>istediğinize emin misiniz?</p>
+        </div>
+        <div class="popup-footer">
+            <button id="clear-cart-cancel" class="popup-btn popup-btn-secondary">Vazgeç</button>
+            <button id="clear-cart-confirm" class="popup-btn">Temizle</button>
+        </div>
+    </div>
+</div>
+    
+    <!-- Stok Uyarı Popup -->
+    <div id="stock-popup" class="popup">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3><b>Stok Uyarısı</b></h3>
+                <span class="close-popup">&times;</span>
+            </div>
+            <div class="popup-body">
+                <p id="stock-popup-message"></p>
+            </div>
+            <div class="popup-footer">
+                <button id="stock-popup-ok" class="popup-btn">Tamam</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // cart.js dosyasının yüklenmesini engellemek için
+        // Orijinal createElement fonksiyonunu sakla
+        const originalCreateElement = document.createElement;
+        
+        // createElement fonksiyonunu override et
+        document.createElement = function(tagName) {
+            const element = originalCreateElement.call(document, tagName);
+            
+            // Eğer bir script elementi oluşturuluyorsa ve src'si cart.js ise, yüklemeyi engelle
+            if (tagName.toLowerCase() === 'script') {
+                const originalSetAttribute = element.setAttribute;
+                element.setAttribute = function(name, value) {
+                    if (name === 'src' && value && value.includes('cart.js')) {
+                        console.log('cart.js yüklenmesi engellendi');
+                        return;
+                    }
+                    return originalSetAttribute.call(this, name, value);
+                };
+            }
+            
+            return element;
+        };
+        
+        // Sayfa yüklenirken yükleniyor ekranını göster
+        document.addEventListener('DOMContentLoaded', function() {
+            const authLoading = document.getElementById('auth-loading');
+            const pageContent = document.querySelectorAll('header, main, footer');
+            
+            // Sayfa içeriğini başlangıçta gizle
+            pageContent.forEach(el => el.style.display = 'none');
+            
+            // Firebase auth durumunu kontrol et
+            const auth = firebase.auth();
+            auth.onAuthStateChanged(function(user) {
+                console.log("Auth durumu değişti:", user ? user.email : "Kullanıcı yok");
+            });
+            
+            // Sayfa içeriği yüklendikte
+            setTimeout(function() {
+                authLoading.style.display = 'none';
+                pageContent.forEach(el => el.style.display = '');
+            }, 1000); // Minimum 1 saniye göster
+            
+            // cart.js dosyasının yüklenmesini engelle
+            window.preventCartJsLoading = true;
+            
+            // Popup kapatma için event listener'lar
+            const stockPopup = document.getElementById('stock-popup');
+            const stockPopupOkButton = document.getElementById('stock-popup-ok');
+            const closePopupButtons = document.querySelectorAll('.close-popup');
+            
+            // Tamam butonuna tıklandığında popup'u kapat
+            if (stockPopupOkButton) {
+                stockPopupOkButton.addEventListener('click', function() {
+                    stockPopup.style.display = 'none';
+                });
+            }
+            
+            // X butonlarına tıklandığında popup'ları kapat
+            closePopupButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const popup = this.closest('.popup');
+                    if (popup) popup.style.display = 'none';
+                });
+            });
+            
+            // Popup dışına tıklandığında kapat
+            window.addEventListener('click', function(event) {
+                if (event.target.classList.contains('popup')) {
+                    event.target.style.display = 'none';
+                }
+            });
+        });
+    </script>
+    
+    <script>
+        // Sepet işlevsellliği - localStorage tabanlı
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const cartSidebar = document.querySelector('.cart-sidebar');
+        const cartOverlay = document.querySelector('.cart-overlay');
+        const cartItems = document.querySelector('.cart-items');
+        const totalAmount = document.querySelector('.total-amount');
+        
+        // Sepet sayacını güncelle
+        function updateCartCount() {
+            const cartCount = document.querySelector('.cart-count');
+            const cartData = JSON.parse(localStorage.getItem('cart')) || [];
+            
+            // Toplam ürün adedini hesapla
+            const totalItems = cartData.reduce((total, item) => total + item.quantity, 0);
+            
+            // Sepet boş olsa bile sayacı göster, sadece değerini 0 yap
+            cartCount.textContent = totalItems;
+            cartCount.style.display = 'flex';
+        }
+
+        // Sepeti aç/kapa
+        function toggleCart() {
+            cartSidebar.classList.toggle('active');
+            cartOverlay.classList.toggle('active');
+        }
+
+        // Sepet arayüzünü güncelle
+        function updateCartUI() {
+            // Her zaman güncel sepeti al
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const cartItemsContainer = document.querySelector('.cart-items');
+            const totalAmountElement = document.querySelector('.total-amount');
+            let total = 0;
+
+            if (cartItemsContainer) {
+    if (cart.length === 0) {
+    cartItemsContainer.innerHTML = '<div class="empty-cart">Sepetinizde ürün bulunmamaktadır.</div>';
+    if (totalAmountElement) totalAmountElement.textContent = '0,00 TL';
+    return;
+}
+cartItemsContainer.innerHTML = cart.map((item, index) => {
+        // product-page.js ile aynı şekilde varyant bilgisini hazırla
+        let variantInfo = '';
+        if (item.variants && Object.keys(item.variants).length > 0) {
+            variantInfo = Object.entries(item.variants)
+                .map(([k, v]) => `<strong>${k.charAt(0).toUpperCase() + k.slice(1)}:</strong> <span style='color:#fff'>${v}</span>`)
+                .join('<br>');
+        }
+        
+        // Ürün görselini belirle (varyant görseli varsa onu kullan)
+        let productImage = item.image;
+        if (item.variantImage) {
+            productImage = item.variantImage;
+        }
+        
+        // Fiyatı aynı şekilde göster
+        let priceNumber = typeof item.price === 'number' ? item.price : parseFloat(item.price);
+        let priceDisplay = '';
+        if (typeof item.price === 'number' || !isNaN(parseFloat(item.price))) {
+            priceDisplay = priceNumber.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' TL';
+        } else {
+            priceDisplay = item.price + ' TL';
+        }
+        
+        // Toplam fiyatı hesapla
+        const itemTotal = priceNumber * item.quantity;
+        total += itemTotal;
+        
+        // Varyant verilerini JSON olarak sakla
+        const variantData = item.variants ? JSON.stringify(item.variants) : '';
+        
+        return `
+            <div class="cart-item" data-id="${item.productId || item.id || ''}" data-index="${index}" data-variant="${variantData.replace(/"/g, '&quot;')}">
+                <img src="${productImage}" alt="${item.name}">
+                <div class="cart-item-info">
+                    <h4>${item.name}</h4>
+                    <p style="margin-bottom: 5px; margin-top: 5px;">${variantInfo}</p>
+                    <div class="cart-item-price">${priceDisplay}</div>
+                    <div class="cart-item-quantity">
+                        <button class="quantity-btn decrease-btn" aria-label="Azalt">-</button>
+                        <span>${item.quantity}</span>
+                        <button class="quantity-btn increase-btn" aria-label="Arttır">+</button>
+                    </div>
+                </div>
+                <button class="remove-item" aria-label="Sil">Sil</button>
+                <div class="cart-item-total">
+                    ${(itemTotal).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2})} TL
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Butonlara event listener ekle - her seferinde yeni dinleyiciler eklememek iu00e7in
+    // u00d6nce tu00fcm mevcut dinleyicileri kaldur (event delegation kullanmak daha iyi olurdu)
+    cartItemsContainer.querySelectorAll('.cart-item').forEach(cartItemDiv => {
+        // Her sepet u00f6u011fesi iu00e7in benzersiz bir ID oluu015ftur
+        const productId = cartItemDiv.getAttribute('data-id');
+        const variantData = cartItemDiv.getAttribute('data-variant');
+        const index = parseInt(cartItemDiv.getAttribute('data-index'), 10);
+        
+        // Log bilgisi
+        console.log(`Sepet u00f6u011fesi #${index} iu00e7in olay dinleyicileri ekleniyor`, productId);
+        
+        const decreaseBtn = cartItemDiv.querySelector('.decrease-btn');
+        const increaseBtn = cartItemDiv.querySelector('.increase-btn');
+        const removeBtn = cartItemDiv.querySelector('.remove-item');
+        
+        // Artırma butonuna ürün ve varyant bilgilerini data attribute olarak ekle
+        if (increaseBtn) {
+            increaseBtn.setAttribute('data-product-id', productId);
+            increaseBtn.setAttribute('data-variants', variantData);
+            // Miktar bilgisini DOM'dan al
+            const quantityElement = increaseBtn.parentElement.querySelector('span');
+            const quantity = quantityElement ? quantityElement.textContent : '1';
+            increaseBtn.setAttribute('data-quantity', quantity);
+        }
+
+        // Azaltma butonu
+        decreaseBtn.addEventListener('click', function(e) {
+            e.stopPropagation(); // Olay yayılımını durdur
+            // Gu00fcncel sepet indeksini al (DOM'dan)
+            const currentIndex = Array.from(cartItemsContainer.querySelectorAll('.cart-item')).indexOf(cartItemDiv);
+            console.log(`Azaltma butonu tu0131klandu0131: Orijinal indeks=${index}, Gu00fcncel indeks=${currentIndex}`);
+            updateCartItemQuantityByIndex(currentIndex, -1);
+        });
+        
+        // Artu0131rma butonu
+        increaseBtn.addEventListener('click', function(e) {
+            e.stopPropagation(); // Olay yayılımını durdur
+            // Gu00fcncel sepet indeksini al (DOM'dan)
+            const currentIndex = Array.from(cartItemsContainer.querySelectorAll('.cart-item')).indexOf(cartItemDiv);
+            console.log(`Artu0131rma butonu tu0131klandu0131: Orijinal indeks=${index}, Gu00fcncel indeks=${currentIndex}`);
+            updateCartItemQuantityByIndex(currentIndex, 1);
+        });
+        
+        // Silme butonu
+        removeBtn.addEventListener('click', function(e) {
+            e.stopPropagation(); // Olay yayılımını durdur
+            // Gu00fcncel sepet indeksini al (DOM'dan)
+            const currentIndex = Array.from(cartItemsContainer.querySelectorAll('.cart-item')).indexOf(cartItemDiv);
+            console.log(`Silme butonu tu0131klandu0131: Orijinal indeks=${index}, Gu00fcncel indeks=${currentIndex}`);
+            removeFromCartByIndex(currentIndex);
+        });
+    });
+
+    if (totalAmountElement) {
+                    totalAmountElement.textContent = formatPrice(total) + ' TL';
+                }
+                
+                // Stok kontrolü yap ve artırma butonlarını güncelle
+                updateIncreaseButtonsStockStatus();
+            }
+        }
+
+        // Fiyat formatla
+        function formatPrice(price) {
+            return price.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Firebase'den ürün stok bilgisini kontrol et (product-page.js'den alındı)
+        async function checkProductStock(productId, variants = {}) {
+            try {
+                const productDoc = await firebase.firestore().collection('products').doc(productId).get();
+                
+                if (!productDoc.exists) {
+                    console.warn('Ürün bulunamadı:', productId);
+                    return 0;
+                }
+                
+                const product = productDoc.data();
+                
+                // Varyantlı ürün ise varyant stoğunu kontrol et
+                if (Object.keys(variants).length > 0 && product.variants) {
+                    const variantKey = Object.entries(variants)
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .map(([k, v]) => `${k}:${v}`)
+                        .join('_');
+                        
+                    if (product.variantStocks && product.variantStocks[variantKey] !== undefined) {
+                        return parseInt(product.variantStocks[variantKey]) || 0;
+                    }
+                    
+                    // Eğer variantStocks yoksa eski stok yapısını kontrol et
+                    const variantStockKey = Object.values(variants).join('-');
+                    if (product.stock && product.stock[variantStockKey] !== undefined) {
+                        return parseInt(product.stock[variantStockKey]) || 0;
+                    }
+                    
+                    return 0;
+                }
+                
+                // Varyantsız ürün ise genel stoğu döndür
+                return parseInt(product.stock) || 0;
+            } catch (error) {
+                console.error('Stok bilgisi alınırken hata oluştu:', error);
+                return 0;
+            }
+        }
+
+        // Artırma butonlarının stok bilgilerini sakla (product-page.js'den uyarlanmıştır)
+        // Butonları inaktif yapmak yerine, sadece stok bilgilerini saklıyoruz
+        async function updateIncreaseButtonsStockStatus() {
+            const increaseButtons = document.querySelectorAll('.increase-btn');
+            
+            for (const button of increaseButtons) {
+                const cartItem = button.closest('.cart-item');
+                if (!cartItem) continue;
+                
+                const productId = cartItem.getAttribute('data-id');
+                const variantData = cartItem.getAttribute('data-variant');
+                const variants = variantData ? JSON.parse(variantData.replace(/&quot;/g, '\"')) : {};
+                const quantityElement = button.parentElement.querySelector('span');
+                const currentQuantity = parseInt(quantityElement.textContent, 10);
+                
+                try {
+                    const stock = await checkProductStock(productId, variants);
+                    // Stok bilgisini butonun data attribute'una sakla
+                    button.setAttribute('data-max-stock', stock);
+                    
+                    // Butonları inaktif yapmak yerine sadece stok bilgisini saklıyoruz
+                    // Stok kontrolü updateCartItemQuantityByIndex fonksiyonunda yapılacak
+                } catch (error) {
+                    console.error('Stok kontrolü sırasında hata:', error);
+                    // Hata durumunda varsayılan stok bilgisi ekle
+                    button.setAttribute('data-max-stock', '0');
+                }
+            }
+        }
+
+        // Sepetteki ürünün miktarını güncelle
+        async function updateCartItemQuantityByIndex(index, change) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            if (index >= 0 && index < cart.length) {
+                let item = cart[index];
+                let newQuantity = item.quantity + change;
+                
+                // Artırma işlemi için stok kontrolü yap
+                if (change > 0) {
+                    try {
+                        // Önce DOM'dan butonun saklanmış stok bilgisini kontrol et
+                        const cartItems = document.querySelectorAll('.cart-item');
+                        if (index < cartItems.length) {
+                            const cartItem = cartItems[index];
+                            const increaseBtn = cartItem.querySelector('.increase-btn');
+                            
+                            if (increaseBtn && increaseBtn.hasAttribute('data-max-stock')) {
+                                const maxStock = parseInt(increaseBtn.getAttribute('data-max-stock'), 10);
+                                
+                                // Stok kontrolü
+                                if (newQuantity > maxStock) {
+                                    // Popup içeriğini ayarla
+                                    document.getElementById('stock-popup-message').textContent = 'Bu üründe daha fazla stok mevcut değildir.';
+                                    // Popup'u göster
+                                    document.getElementById('stock-popup').style.display = 'block';
+                                    return;
+                                }
+                            } else {
+                                // Eğer buton üzerinde stok bilgisi yoksa Firestore'dan kontrol et
+                                const stock = await checkProductStock(item.productId, item.variants || {});
+                                
+                                // Stok kontrolü
+                                if (newQuantity > stock) {
+                                    // Popup içeriğini ayarla
+                                    document.getElementById('stock-popup-message').textContent = 'Bu üründe daha fazla stok mevcut değildir.';
+                                    // Popup'u göster
+                                    document.getElementById('stock-popup').style.display = 'block';
+                                    return;
+                                }
+                                
+                                // Stok bilgisini butona kaydet (gelecekteki kontroller için)
+                                if (increaseBtn) {
+                                    increaseBtn.setAttribute('data-max-stock', stock);
+                                }
+                            }
+                        } else {
+                            // DOM'da buton bulunamazsa doğrudan Firestore'dan kontrol et
+                            const stock = await checkProductStock(item.productId, item.variants || {});
+                            
+                            // Stok kontrolü
+                            if (newQuantity > stock) {
+                                // Popup içeriğini ayarla
+                                document.getElementById('stock-popup-message').textContent = 'Bu üründe daha fazla stok mevcut değildir.';
+                                // Popup'u göster
+                                document.getElementById('stock-popup').style.display = 'block';
+                                return;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Stok kontrolü sırasında hata:', error);
+                        // Hata durumunda varsayılan bir stok limiti kullan
+                        const defaultStock = 10;
+                        if (newQuantity > defaultStock) {
+                            // Popup içeriğini ayarla
+                            document.getElementById('stock-popup-message').textContent = `Stok bilgisi alınamadı. Güvenlik nedeniyle en fazla ${defaultStock} adet sipariş verebilirsiniz.`;
+                            // Popup'u göster
+                            document.getElementById('stock-popup').style.display = 'block';
+                            return;
+                        }
+                    }
+                }
+                
+                // Azaltma işlemi için miktar kontrolü
+                if (newQuantity < 1) {
+                    removeFromCartByIndex(index);
+                } else {
+                    // Miktarı güncelle
+                    cart[index].quantity = newQuantity;
+                    localStorage.setItem('cart', JSON.stringify(cart));
+                    updateCartUI();
+                    updateCartCount();
+                }
+            }
+        }
+
+        // Sepetten ürün sil
+        function removeFromCartByIndex(index) {
+            console.log('Sepetten kaldırılıyor, index:', index);
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            
+            if (index >= 0 && index < cart.length) {
+                // Silinen ürünün bilgilerini logla
+                const removedItem = cart[index];
+                console.log('Silinen ürün:', removedItem.name, 'Varyant:', removedItem.variants);
+                
+                // Ürün sepetten kaldır
+                cart.splice(index, 1);
+                localStorage.setItem('cart', JSON.stringify(cart));
+                
+                // Sepet arayüzünü tamamen yeniden oluştur
+                updateCartUI();
+                updateCartCount();
+                
+                console.log('Ürün sepetten kaldırıldı, güncel sepet:', cart);
+            } else {
+                console.error('Geçersiz sepet indeksi:', index, 'Sepet uzunluğu:', cart.length);
+            }
+        }
+
+        // Event listeners
+        document.querySelector('.cart-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleCart();
+            updateCartUI();
+        });
+
+        document.querySelector('.close-cart').addEventListener('click', function() {
+            cartSidebar.classList.remove('active');
+            cartOverlay.classList.remove('active');
+        });
+
+        document.querySelector('.cart-overlay').addEventListener('click', function() {
+            cartSidebar.classList.remove('active');
+            cartOverlay.classList.remove('active');
+        });
+
+        // Sayfa yüklendiğinde sepet sayacını ve içeriğini güncelle
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCartCount();
+            updateCartUI();
+        });
+
+        // LocalStorage'daki değişiklikleri dinle
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'cart') {
+                cart = JSON.parse(e.newValue) || [];
+                updateCartUI();
+                updateCartCount();
+            }
+        });
+
+        // Sepeti temizle butonu (sadece popup açar)
+        document.querySelector('.clear-cart').addEventListener('click', function(e) {
+            e.preventDefault();
+            const clearCartPopup = document.getElementById('clear-cart-popup');
+            if (clearCartPopup) {
+                clearCartPopup.style.display = 'block';
+            }
+        });
+
+        // Sayfa yüklendiğinde sepet sayacını kontrol et
+        window.onload = function() {
+            updateCartCount();
+            
+            // Yükleniyor ekranı için minimum 2 saniye gösterim süresi
+            const loadingStartTime = new Date().getTime();
+            const minLoadingTime = 2000; // 2 saniye
+            const currentTime = new Date().getTime();
+            const elapsedTime = currentTime - loadingStartTime;
+            
+            if (elapsedTime >= minLoadingTime) {
+                document.getElementById('auth-loading').style.display = 'none';
+            } else {
+                setTimeout(() => {
+                    document.getElementById('auth-loading').style.display = 'none';
+                }, minLoadingTime - elapsedTime);
+            }
+        };
+    </script>
+    
+    <!-- Categories.js modül olarak yükle -->
+    <script type="module" src="categories-new.js"></script>
+<script>
+// Sepeti Temizle Popup açma ve kontrol
+const clearCartBtn = document.querySelector('.clear-cart');
+const clearCartPopup = document.getElementById('clear-cart-popup');
+const clearCartCancel = document.getElementById('clear-cart-cancel');
+const clearCartConfirm = document.getElementById('clear-cart-confirm');
+const closePopupBtn = clearCartPopup.querySelector('.close-popup');
+
+if (clearCartBtn && clearCartPopup) {
+    clearCartBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        clearCartPopup.style.display = 'block';
+    });
+}
+
+function closeClearCartPopup() {
+    clearCartPopup.style.display = 'none';
+}
+
+if (clearCartCancel) clearCartCancel.addEventListener('click', closeClearCartPopup);
+if (closePopupBtn) closePopupBtn.addEventListener('click', closeClearCartPopup);
+
+if (clearCartConfirm) {
+    clearCartConfirm.addEventListener('click', function() {
+        closeClearCartPopup();
+        // Sepeti temizleme fonksiyonunu çağır
+        if (typeof clearCart === 'function') {
+            clearCart();
+        } else if (window.clearCart) {
+            window.clearCart();
+        } else {
+            // localStorage tabanlı ise
+            localStorage.removeItem('cart');
+            if (typeof updateCartUI === 'function') updateCartUI();
+            if (typeof updateCartCount === 'function') updateCartCount();
+        }
+    });
+}
+</script>
+</body>
+</html>

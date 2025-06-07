@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Yeni Hesap Oluştur | AristoCart">
+    <title>Yeni Hesap Oluştur | AristoCart</title>
+    <link rel="icon" type="image/png" href="images/ar2.png">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .secure-register {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #c9a227;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+        }
+
+        .secure-register i {
+            font-size: 1.2rem;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            color: #c9a227;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            padding: 6rem 2rem 2rem;
+        }
+
+        .register-container .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #1a1a1a !important;
+            border: 1px solid rgba(201, 162, 39, 0.1);
+            color: #c9a227 !important;
+            border-radius: 4px;
+        }
+
+        .register-container input:-webkit-autofill,
+        .register-container input:-webkit-autofill:hover,
+        .register-container input:-webkit-autofill:focus,
+        .register-container input:-webkit-autofill:active {
+            -webkit-text-fill-color: #c9a227 !important;
+            -webkit-box-shadow: 0 0 0 30px #1a1a1a inset !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        .register-container {
+            background-color: #000;
+            border-radius: 8px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid rgba(201, 162, 39, 0.1);
+        }
+
+        .register-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .register-header img {
+            width: 200px;
+            height: auto;
+            margin-bottom: 1rem;
+        }
+
+        .register-header h1 {
+            font-size: 1.5rem;
+            color: #c9a227;
+        }
+
+        .form-group {
+            margin-bottom: 0.75rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.25rem;
+            color: #c9a227;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #1a1a1a;
+            border: 1px solid rgba(201, 162, 39, 0.1);
+            color: #c9a227;
+            border-radius: 4px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #c9a227;
+        }
+
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .form-check label {
+            color: #c9a227;
+            font-size: 0.9rem;
+        }
+
+        .form-check a {
+            color: #c9a227;
+            text-decoration: none;
+        }
+
+        .form-check a:hover {
+            text-decoration: underline;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #c9a227;
+            color: #000;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            background-color: #b38e22;
+        }
+
+        .register-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(201, 162, 39, 0.1);
+        }
+
+        .register-footer a {
+            color: #c9a227;
+            text-decoration: none;
+        }
+
+        .register-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .password-requirements {
+            color: rgba(201, 162, 39, 0.7);
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+    </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+      }
+    }
+    </script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">
+                <img src="images/ar2.png" alt="AristoCart" class="logo-icon">
+                ARISTOCART
+            </a>
+            <div class="secure-register">
+                <i class="fas fa-lock"></i>
+                <b>GÜVENLİ KAYIT</b>
+            </div>
+        </div>
+    </nav>
+
+    <div class="register-container">
+        <div class="register-header">
+            <img src="images/ar2.png" alt="ARISTOCART Logo">
+            <h1>Yeni Hesap Oluştur</h1>
+        </div>
+        <form id="registerForm" onsubmit="return handleRegister(event)">
+            <div class="form-group">
+                <label for="firstName">Ad</label>
+                <input type="text" id="firstName" class="form-control" required>
+                <div id="firstNameError" class="error-message">Adınızı giriniz.</div>
+            </div>
+            <div class="form-group">
+                <label for="lastName">Soyad</label>
+                <input type="text" id="lastName" class="form-control" required>
+                <div id="lastNameError" class="error-message">Soyadınızı giriniz.</div>
+            </div>
+            <div class="form-group">
+                <label for="email">E-posta</label>
+                <input type="email" id="email" class="form-control" required>
+                <div id="emailError" class="error-message">Bu e-posta adresi zaten kullanılıyor.</div>
+                <div id="emailFormatError" class="error-message">Geçerli bir e-posta adresi giriniz.</div>
+            </div>
+            <div class="form-group">
+                <label for="password">Şifre</label>
+                <input type="password" id="password" class="form-control" required>
+                <div id="passwordRequirementError" class="error-message">Şifre en az 8 karakter uzunluğunda olmalı ve en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.</div>
+            </div>
+            <div class="form-group">
+                <label for="confirmPassword">Şifre Tekrar</label>
+                <input type="password" id="confirmPassword" class="form-control" required>
+                <div id="passwordError" class="error-message">Şifreler eşleşmiyor.</div>
+            </div>
+            <div class="form-group">
+                <label for="phone">Telefon</label>
+                <input type="tel" id="phone" class="form-control" placeholder="5XX XXX XX XX" required>
+                <div id="phoneError" class="error-message">Lütfen telefon numaranızı doğru formatta giriniz. <br/>(Örn: 555 123 45 67)</div>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" id="terms" required>
+                <label for="terms">
+                    <a href="terms.html" target="_blank">Kullanım Koşulları</a>'nı ve
+                    <a href="privacy.html" target="_blank">Gizlilik Politikası</a>'nı okudum ve kabul ediyorum.
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input type="checkbox" id="newsletter">
+                <label for="newsletter">
+                    ARISTOCART'tan güncel kampanya ve fırsatları e-posta ile almak istiyorum.
+                </label>
+            </div>
+
+            <button type="submit" class="btn">Hesap Oluştur</button>
+        </form>
+        <div class="register-footer">
+            <p>Zaten hesabınız var mı? <a href="login.html">Giriş Yap</a></p>
+        </div>
+    </div>
+    <script src="register.js" type="module"></script>
+</body>
+</html>

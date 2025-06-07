@@ -1,0 +1,2362 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <script>
+    // Özel popup fonksiyonu (her sayfada kullanılabilir)
+    window.showCustomPopup = window.showCustomPopup || function(message, options = {}) {
+        return new Promise(resolve => {
+            // Eski popup'ı kaldır
+            let old = document.getElementById('custom-popup');
+            if (old) old.remove();
+            // Arka plan kaydırmasını engelle
+            document.body.style.overflow = 'hidden';
+            // Popup wrapper oluştur
+            const popup = document.createElement('div');
+            popup.id = 'custom-popup';
+            popup.className = 'popup';
+            popup.style.display = 'block';
+            popup.innerHTML = `
+                <div class="popup-content">
+                    <div class="popup-header">
+                        <h3><b>${options.confirm ? 'Onay' : 'Bilgi'}</b></h3>
+                        <span class="close-popup">&times;</span>
+                    </div>
+                    <div class="popup-body">
+                        <p style="margin:0;font-size:1.08rem;color:#fff;">${message}</p>
+                    </div>
+                    <div class="popup-footer">
+                        ${options.confirm
+                            ? `<button id=\"popup-no\" class=\"popup-btn popup-btn-secondary\" style=\"background:#dc3545;color:#fff;\">Hayır</button>\n<button id=\"popup-yes\" class=\"popup-btn\">Evet</button>`
+                            : `<button id=\"popup-ok\" class=\"popup-btn\">Tamam</button>`}
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(popup);
+            // Kapatma işlemleri
+            const closePopup = () => {
+                popup.remove();
+                document.body.style.overflow = '';
+                document.onkeydown = null;
+            };
+            popup.querySelector('.close-popup').onclick = () => { closePopup(); resolve(false); };
+            if (options.confirm) {
+                document.getElementById('popup-yes').onclick = () => { closePopup(); resolve(true); };
+                document.getElementById('popup-no').onclick = () => { closePopup(); resolve(false); };
+            } else {
+                document.getElementById('popup-ok').onclick = () => { closePopup(); resolve(true); };
+            }
+            // ESC ile kapatma
+            document.onkeydown = function(e) {
+                if (e.key === 'Escape') {
+                    closePopup();
+                    resolve(false);
+                    document.onkeydown = null;
+                }
+            };
+        });
+    };
+    // Popup CSS'si ekle (bir kere)
+    if (!document.getElementById('aristocart-popup-style')) {
+        const style = document.createElement('style');
+        style.id = 'aristocart-popup-style';
+        style.textContent = `
+        .popup { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); overflow: auto; }
+        .popup-content { background-color: #1A1A1A; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 0; width: 380px; max-width: 90%; border-radius: 10px; box-shadow: 0 0 20px rgba(201,162,39,0.4); border: 1px solid #c9a227; }
+        .popup-header { padding: 15px 20px; background-color: #000000; border-bottom: 1px solid #c9a227; border-radius: 10px 10px 0 0; display: flex; justify-content: space-between; align-items: center; }
+        .popup-header h3 { margin: 0; font-size: 18px; color: #c9a227; font-weight: bold; letter-spacing: 0.5px; font-family: 'Playfair Display', serif; }
+        .close-popup { color: #c9a227; font-size: 22px; font-weight: bold; cursor: pointer; transition: color 0.2s; line-height: 1; }
+        .close-popup:hover { color: #B08C1E; }
+        .popup-body { padding: 20px; color: #ffffff; font-size: 14px; line-height: 1.4; text-align: center; }
+        .popup-footer { padding: 15px 20px; background-color: #000000; border-top: 1px solid #c9a227; border-radius: 0 0 10px 10px; display: flex; justify-content: center; gap: 10px; }
+        .popup-btn { padding: 8px 18px; border: none; border-radius: 4px; background-color: #c9a227; color: #000000; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 5px rgba(201,162,39,0.3); }
+        .popup-btn:hover { background-color: #B08C1E; box-shadow: 0 3px 8px rgba(201,162,39,0.4); }
+        .popup-btn-secondary { background: #232323; color: #c9a227; border: 1px solid #c9a227; }
+        .popup-btn-secondary:hover { background: #333; color: #fff; }
+        `;
+        document.head.appendChild(style);
+    }
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Hesabım | AristoCart">
+    <title>Hesabım | AristoCart</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .site-name {
+            color: #c9a227;
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            color: #c9a227;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding-top: 70px;
+        }
+
+        .sidebar {
+            width: 280px;
+            background-color: #000;
+            height: 100vh;
+            position: fixed;
+            top: 70px;
+            left: 0;
+            padding: 2rem 0;
+            border-right: 1px solid rgba(201, 162, 39, 0.1);
+            overflow-y: auto;
+        }
+
+        .profile-section {
+            padding: 0 2rem;
+            margin-bottom: 18px;
+            text-align: center;
+        }
+
+        .profile-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            border: 2px solid #c9a227;
+            overflow: hidden;
+        }
+
+        .profile-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-name {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            color: #c9a227;
+            text-decoration: none;
+            padding: 1rem 2rem;
+            display: block;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(201, 162, 39, 0.1);
+            border-left: 3px solid #c9a227;
+        }
+
+        .nav-link.active {
+            background-color: rgba(201, 162, 39, 0.1);
+            border-left: 3px solid #c9a227;
+        }
+
+        .main-content {
+            margin-left: 280px;
+            width: calc(100% - 280px);
+            padding: 2rem;
+            flex: 1;
+            margin-top: 0;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(201, 162, 39, 0.1);
+            padding-top: 16px;
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+        }
+
+        .content-section {
+            background-color: #000;
+            border-radius: 12px;
+            padding: 2.5rem;
+            border: 1px solid rgba(201, 162, 39, 0.1);
+            box-shadow: 0 4px 20px rgba(201, 162, 39, 0.05);
+            margin-top: 20px;
+        }
+
+        .section-content h2 {
+            font-size: 1.8rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid rgba(201, 162, 39, 0.2);
+            color: #c9a227;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            background: rgba(26, 26, 26, 0.6);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid rgba(201, 162, 39, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .form-group:hover {
+            border-color: rgba(201, 162, 39, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.75rem;
+            color: #c9a227;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(26, 26, 26, 0.8);
+            border: 1px solid rgba(201, 162, 39, 0.2);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #c9a227;
+            box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.2);
+        }
+
+        .form-input:hover {
+            border-color: rgba(201, 162, 39, 0.4);
+        }
+
+        .order-card {
+            background-color: rgba(26, 26, 26, 0.8);
+            border: 1px solid rgba(201, 162, 39, 0.2);
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .order-card:hover {
+            border-color: rgba(201, 162, 39, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            padding-bottom: 1rem;
+            margin-bottom: 0px;
+        }
+
+        .product-card {
+            display: flex;
+            align-items: flex-start;
+            background-color: rgba(26, 26, 26, 0.8);
+            border: 1px solid rgba(201, 162, 39, 0.2);
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .product-card:hover {
+            border-color: rgba(201, 162, 39, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .product-image {
+            width: 120px;
+            height: 120px;
+            margin-right: 2rem;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid rgba(201, 162, 39, 0.2);
+            flex-shrink: 0;
+        }
+
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .product-info {
+            flex-grow: 1;
+        }
+
+        .product-info h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #c9a227;
+        }
+
+        .product-price {
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            color: #c9a227;
+        }
+
+        .product-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .order-content {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+
+        .order-info {
+            flex-grow: 1;
+            padding-top: 5px;
+        }
+
+        .order-status {
+            margin: 1rem 0;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            display: inline-block;
+            font-weight: 500;
+        }
+
+        .status-shipping {
+            background-color: rgba(201, 162, 39, 0.1);
+            color: #c9a227;
+        }
+
+        .status-delivered {
+            background-color: rgba(39, 201, 63, 0.1);
+            color: #27c93f;
+        }
+
+        .order-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid #c9a227;
+            color: #c9a227;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(201, 162, 39, 0.1);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(201, 162, 39, 0.1);
+        }
+
+        .notification-item {
+            background: rgba(26, 26, 26, 0.6);
+            border: 1px solid rgba(201, 162, 39, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .notification-item:hover {
+            transform: translateY(-2px);
+            border-color: rgba(201, 162, 39, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(201, 162, 39, 0.1);
+            color: #c9a227;
+            font-size: 0.9rem;
+        }
+
+        .notification-content {
+            color: #fff;
+            line-height: 1.5;
+        }
+
+        .notification-shipping {
+            display: flex;
+            align-items: center;
+            margin-top: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: rgba(201, 162, 39, 0.1);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            color: #c9a227;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #c9a227 0%, #ae8a1e 100%);
+            color: #000;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(201, 162, 39, 0.2);
+        }
+
+        .faq-section {
+            margin-top: 2rem;
+        }
+
+        .faq-item {
+            background-color: rgba(26, 26, 26, 0.8);
+            border: 1px solid rgba(201, 162, 39, 0.2);
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .faq-question {
+            padding: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+            color: #c9a227;
+        }
+
+        .faq-answer {
+            padding: 0 1.5rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background-color: rgba(201, 162, 39, 0.05);
+        }
+
+        .faq-item.active .faq-answer {
+            padding: 1.5rem;
+            max-height: 500px;
+        }
+
+        .support-contact {
+            background: linear-gradient(135deg, rgba(201, 162, 39, 0.1), rgba(26, 26, 26, 0.8));
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .support-contact h3 {
+            color: #c9a227;
+            margin-bottom: 1rem;
+        }
+
+        .contact-options {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .contact-option {
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            background-color: rgba(201, 162, 39, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .contact-option:hover {
+            background-color: rgba(201, 162, 39, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .password-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-container .form-input {
+            flex: 1;
+            padding-right: 40px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #C9A227;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .password-toggle:hover {
+            color: #e0b94e;
+        }
+        .btn.btn-secondary.remove-favorite {
+            background: #dc3545 !important;
+            color: #fff !important;
+            border: none;
+        }
+        .btn.btn-secondary.remove-favorite:hover {
+            background: #dc3545 !important;
+            color: #fff !important;
+            filter: brightness(0.95);
+        }
+        .error-message {
+            color: #dc3545;
+            margin-bottom: 10px;
+            display: none;
+        }
+        .error-message.show {
+            display: block;
+        }
+    </style>
+    <div id="auth-loading" style="display:flex;justify-content:center;align-items:center;height:100vh;color:#c9a227;font-size:1.5rem;">Yükleniyor...</div>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-init.js"></script>
+    
+    <script type="module">
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { app } from "./firebase-config.js";
+    const authLoading = document.getElementById('auth-loading');
+    const pageContent = Array.from(document.body.children).filter(el => el.id !== 'auth-loading');
+    pageContent.forEach(el => el.style.display = 'none');
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    onAuthStateChanged(auth, async (user) => {
+        console.log('Giriş yapan kullanıcı:', user); // DEBUG: Kullanıcı oturum durumu
+        if (!user) {
+            window.location.href = "login.html";
+        } else {
+            try {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    const fullName = `${data.firstName || ''}${data.firstName && data.lastName ? ' ' : ''}${data.lastName || ''}`.trim();
+                    document.getElementById('customerName').textContent = fullName || user.email || 'Müşteri';
+                    setProfileFields(data); // Profil alanlarını otomatik doldur ve telefonu formatla
+                    console.log('Firestore kullanıcı verisi:', data); // DEBUG: Firestore'dan çekilen kullanıcı verisi
+                } else {
+                    document.getElementById('customerName').textContent = user.email || 'Müşteri';
+                    console.log('Firestore dokümanı yok, sadece email gösterildi'); // DEBUG: Kullanıcı Firestore'da yok
+                }
+            } catch (err) {
+                document.getElementById('customerName').textContent = user.email || 'Müşteri';
+                console.error('Firestore kullanıcı verisi alınamadı:', err); // DEBUG: Firestore hata
+            }
+            authLoading.style.display = 'none';
+            pageContent.forEach(el => el.style.display = '');
+        }
+    });
+    </script>
+
+    <!-- Navbar -->
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <a href="customer-panel.html" class="logo">
+                    <img src="images/ar2.png" alt="AristoCart" class="logo-icon">
+                    ARISTOCART
+                </a>
+                <ul class="nav-links">
+                    <li><a href="customer-panel.html">Ana Sayfa</a></li>
+                    <li class="category-dropdown">
+                        <a href="customer-categories.html">Kategoriler</a>
+                        <div class="category-menu">
+                            <ul class="category-list">
+                                <li><a href="customer-categories.html?category=bilgisayar">Bilgisayar</a></li>
+                                <li><a href="customer-categories.html?category=bilgisayar-bileseni">Bilgisayar Bileşeni</a></li>
+                                <li><a href="customer-categories.html?category=oyuncu-ekipmani">Oyuncu Ekipmanı</a></li>
+                                <li><a href="customer-categories.html?category=kamera">Kamera</a></li>
+                                <li><a href="customer-categories.html?category=yazici">Yazıcı</a></li>
+                                <li><a href="customer-categories.html?category=arac-ekipmani">Araç Ekipmanı</a></li>
+                                <li><a href="customer-categories.html?category=akilli-telefon">Akıllı Telefon</a></li>
+                                <li><a href="customer-categories.html?category=tablet">Tablet</a></li>
+                                <li><a href="customer-categories.html?category=giyilebilir-teknoloji">Giyilebilir Teknoloji</a></li>
+                                <li><a href="customer-categories.html?category=ev-elektronigi">Ev Elektroniği</a></li>
+                                <li><a href="customer-categories.html?category=ev-sinema-ses">Ev Sinema ve Ses Sistemi</a></li>
+                                <li><a href="customer-categories.html?category=beyaz-esya">Beyaz Eşya</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li><a href="customer-panel.html#featured">Öne Çıkanlar</a></li>
+                    <li>
+                        <a href="customer-cart.html" class="cart-link">
+                            <span class="cart-count">0</span>
+                            Sepetim
+                        </a>
+                    </li>
+                    <li class="customer-dropdown">
+                        <a href="#" class="customer-name" id="customerName">Müşteri Adı</a>
+                        <div class="customer-menu">
+                            <ul class="customer-list">
+                                <li><a href="customer-section.html#account">Hesap Bilgilerim</a></li>
+                                <li><a href="customer-section.html#addresses">Adreslerim</a></li>
+                                <li><a href="customer-section.html#orders">Siparişlerim</a></li>
+                                <li><a href="customer-section.html#favorites">Favorilerim</a></li>
+                                <li><a href="customer-section.html#notifications">Bildirimlerim</a></li>
+                                <li><a href="customer-section.html#saved-carts">Kayıtlı Sepetlerim</a></li>
+                                <li><a href="customer-section.html#support">Destek & SSS</a></li>
+                                <li><a href="index.html" onclick="localStorage.removeItem('currentUser')">Çıkış Yap</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <aside class="sidebar">
+        <div class="profile-section">
+            <div class="profile-image">
+                <img src="images/ar2.png" alt="Admin Logo">
+            </div>
+            <div class="profile-name">Müşteri Adı</div>
+        </div>
+        <nav>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="#account" class="nav-link" data-section="account">Hesap Bilgilerim</a></li>
+                <li class="nav-item"><a href="#addresses" class="nav-link" data-section="addresses">Adreslerim</a></li>
+                <li class="nav-item"><a href="#orders" class="nav-link" data-section="orders">Siparişlerim</a></li>
+                <li class="nav-item"><a href="#favorites" class="nav-link" data-section="favorites">Favorilerim</a></li>
+                <li class="nav-item"><a href="#notifications" class="nav-link" data-section="notifications">Bildirimlerim</a></li>
+                <li class="nav-item"><a href="#saved-carts" class="nav-link" data-section="saved-carts">Kayıtlı Sepetlerim</a></li>
+                <li class="nav-item"><a href="#support" class="nav-link" data-section="support">Destek & SSS</a></li>
+                <li class="nav-item"><a href="index.html" class="nav-link">Çıkış Yap</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="content-section">
+            <div id="content">
+                <!-- Kayıtlı Sepetlerim Bölümü -->
+                <div id="saved-carts" class="section-content" style="display:none;">
+                    <h2 style="color:#c9a227;margin-bottom:1rem;">Kayıtlı Sepetlerim</h2>
+                    <div id="saved-carts-list" style="display:flex;flex-direction:column;gap:1rem;"></div>
+                    <div id="saved-carts-empty" style="color:#999;margin-top:1rem;display:none;">Kayıtlı sepetiniz bulunmamaktadır.</div>
+                </div>
+                <!-- Account Information Section -->
+                <div id="account" class="section-content" style="display: block;">
+                    <h2>Hesap Bilgilerim</h2>
+                    <div class="form-group">
+                        <label class="form-label">Ad</label>
+                        <input type="text" class="form-input" id="firstName">
+                        <div id="firstNameError" class="error-message" style="display:none;">Ad alanı boş bırakılamaz.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Soyad</label>
+                        <input type="text" class="form-input" id="lastName">
+                        <div id="lastNameError" class="error-message" style="display:none;">Soyad alanı boş bırakılamaz.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">E-posta</label>
+                        <input type="email" class="form-input" id="email">
+                        <div id="emailError" class="error-message" style="display:none;">E-posta alanı boş bırakılamaz.</div>
+                        <div id="emailFormatError" class="error-message" style="display:none;">Geçerli bir e-posta adresi giriniz.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Telefon</label>
+                        <input type="tel" class="form-input" id="phone">
+                        <div id="phoneError" class="error-message" style="display:none;">Telefon numarası doğru formatta olmalı ve 5 ile başlamalı. (Örn: 555 123 45 67)</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mevcut Şifre <span style="color:#dc3545">*</span></label>
+                        <div class="password-container">
+                            <input type="password" class="form-input" id="currentPassword" required>
+                            <button type="button" class="password-toggle" onclick="togglePassword('currentPassword', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Yeni Şifre</label>
+                        <div class="password-container">
+                            <input type="password" class="form-input" id="newPassword">
+                            <button type="button" class="password-toggle" onclick="togglePassword('newPassword', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div id="passwordRequirementError" class="error-message" style="display:none;">Şifre en az 8 karakter, bir büyük harf, bir küçük harf ve bir rakam içermelidir.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Yeni Şifre Tekrar</label>
+                        <div class="password-container">
+                            <input type="password" class="form-input" id="confirmPassword">
+                            <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div id="passwordError" class="error-message" style="display:none;">Şifreler eşleşmiyor.</div>
+                    </div>
+                    <div id="generalError" class="error-message" style="display:none;"></div>
+                    <button class="btn" onclick="updateUserInfo()">Bilgileri Güncelle</button>
+                </div>
+
+                <!-- Orders Section -->
+                <div id="orders" class="section-content">
+                    <h2>Siparişlerim</h2>
+                    <div id="orders-list"></div>
+                    <script>
+                    function formatPrice(price) {
+                        return price.toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' TL';
+                    }
+                    
+                    // Firestore'dan kullanıcının siparişlerini al ve görüntüle
+                    async function renderOrdersWithUser(user) {
+                        // Yardımcı fonksiyon: Adres objesini stringe çevir
+                        function formatAddress(addr) {
+                            if (!addr || typeof addr === 'string') return addr || '';
+                            let parts = [];
+                            if (addr.fullName) parts.push(addr.fullName);
+                            if (addr.address) parts.push(addr.address);
+                            if (addr.district) parts.push(addr.district);
+                            if (addr.city) parts.push(addr.city);
+                            if (addr.zipCode) parts.push('PK: ' + addr.zipCode);
+                            if (addr.phone) parts.push('Tel: ' + addr.phone);
+                            return parts.filter(Boolean).join(', ');
+                        }
+                        const ordersList = document.getElementById('orders-list');
+                        if (!ordersList) return;
+
+                        // Kullanıcı kontrolü
+                        if (!user || !user.uid) {
+                            ordersList.innerHTML = '<div class="order-card"><div class="order-header"><span>Kullanıcı bilgisi alınamadı.</span></div></div>';
+                            return;
+                        }
+
+                        try {
+                            // Yükleniyor mesajı göster
+                            ordersList.innerHTML = '<div class="order-card"><div class="order-header"><span>Siparişleriniz yükleniyor...</span></div></div>';
+
+                            // Firestore'dan siparişleri al
+                            const ordersRef = firebase.firestore().collection('orders');
+                            const ordersSnapshot = await ordersRef.where('userId', '==', user.uid).get();
+
+                            if (ordersSnapshot.empty) {
+                                ordersList.innerHTML = `
+                                    <div class="notification-item" style="text-align: center; padding: 2rem;">
+                                        <i class="fas fa-shopping-basket" style="font-size: 2rem; color: #c9a227; margin-bottom: 1rem; display: block;"></i>
+                                        <div>Henüz siparişiniz yok.</div>
+                                        <div style="font-size: 0.9rem; color: #999; margin-top: 0.5rem;">Siparişleriniz burada görüntülenecektir.</div>
+                                    </div>
+                                `;
+                                return;
+                            }
+
+                            // Siparişleri diziye dönüştür
+                            const orders = [];
+                            ordersSnapshot.forEach(doc => {
+                                orders.push({
+                                    id: doc.id,
+                                    ...doc.data()
+                                });
+                            });
+
+                            // Siparişleri tarihe göre sırala (en yeni en üstte)
+                            orders.sort((a, b) => {
+                                if (a.createdAt && b.createdAt) {
+                                    return b.createdAt.seconds - a.createdAt.seconds;
+                                } else if (a.createdAt) {
+                                    return -1;
+                                } else if (b.createdAt) {
+                                    return 1;
+                                }
+                                return b.orderNo.localeCompare(a.orderNo);
+                            });
+
+                            // DEBUG: Sipariş adreslerini kontrol et
+                            orders.forEach(order => {
+                                console.log('[DEBUG] Sipariş adresleri:', {
+                                    orderNo: order.orderNo,
+                                    shippingAddress: order.shippingAddress,
+                                    billingAddress: order.billingAddress,
+                                    shippingInfo: order.shippingInfo,
+                                    billingInfo: order.billingInfo
+                                });
+                            });
+
+                            // Eğer adres alanları eksikse, kullanıcıdan adresleri çek
+let userDoc = null;
+let userAddresses = { delivery: [], invoice: [] };
+let fetchedUser = false;
+for (let i = 0; i < orders.length; i++) {
+    let order = orders[i];
+    // Adres alanları yoksa kullanıcıdan al
+    if (
+        (!order.shippingAddress && !order.shippingInfo) ||
+        (!order.billingAddress && !order.billingInfo)
+    ) {
+        if (!fetchedUser) {
+            // Sadece bir kez çek
+            const userSnap = await firebase.firestore().collection('users').doc(order.userId || user.uid).get();
+            if (userSnap.exists) {
+                userDoc = userSnap.data();
+                // 1. Önce array kontrol et
+                if (Array.isArray(userDoc.addresses) && userDoc.addresses.length > 0) {
+                    userAddresses = {
+                        delivery: userDoc.addresses.filter(a => a.type === 'delivery'),
+                        invoice: userDoc.addresses.filter(a => a.type === 'invoice' || a.type === 'billing')
+                    };
+                    console.log('[ADRES DEBUG] userDoc.addresses dizisinden bulundu:', userAddresses);
+                } else {
+                    // 2. Eğer array yoksa subcollection'dan çek
+                    userAddresses = { delivery: [], invoice: [] };
+                    try {
+                        const addrSnap = await firebase.firestore().collection('users').doc(order.userId || user.uid).collection('addresses').get();
+                        addrSnap.forEach(doc => {
+                            const addr = doc.data();
+                            if (addr.type === 'delivery') userAddresses.delivery.push(addr);
+                            if (addr.type === 'invoice' || addr.type === 'billing') userAddresses.invoice.push(addr);
+                        });
+                        console.log('[ADRES DEBUG] subcollectiondan bulundu:', userAddresses);
+                    } catch (err) {
+                        console.error('[ADRES DEBUG] Kullanıcı adres subcollection okunamadı:', err);
+                    }
+                }
+            } else {
+                console.warn('[ADRES DEBUG] Kullanıcı Firestore dökümanı bulunamadı.');
+            }
+            fetchedUser = true;
+        }
+        // Teslimat adresi
+        if (!order.shippingAddress && !order.shippingInfo) {
+            if (userAddresses.delivery.length > 0) {
+                // Son eklenen teslimat adresini kullan
+                order.shippingInfo = userAddresses.delivery[userAddresses.delivery.length - 1];
+                console.log('[ADRES DEBUG] Siparişe eklenen teslimat adresi:', order.shippingInfo);
+            } else {
+                order.shippingInfo = { address: 'Teslimat adresi bulunamadı.' };
+                console.warn('[ADRES DEBUG] Hiç teslimat adresi bulunamadı.');
+            }
+        }
+        // Fatura adresi
+        if (!order.billingAddress && !order.billingInfo) {
+            if (userAddresses.invoice.length > 0) {
+                order.billingInfo = userAddresses.invoice[userAddresses.invoice.length - 1];
+                console.log('[ADRES DEBUG] Siparişe eklenen fatura adresi:', order.billingInfo);
+            } else {
+                order.billingInfo = { address: 'Fatura adresi bulunamadı.' };
+                console.warn('[ADRES DEBUG] Hiç fatura adresi bulunamadı.');
+            }
+        }
+    }
+}
+
+                            // Sipariş ürünleri için varyant görselini Firestore'dan çekerek göster
+                            const ordersWithProductImages = await Promise.all(orders.map(async order => {
+                                const itemsWithImages = await Promise.all(order.items.map(async item => {
+                                    let imageSrc = item.image || 'images/product-placeholder.jpg';
+try {
+    if (item.productId && item.variants && typeof item.variants === 'object') {
+        const productDoc = await firebase.firestore().collection('products').doc(item.productId).get();
+        if (productDoc.exists) {
+            const product = productDoc.data();
+            let variantImageFound = false;
+            if (product.variantImages) {
+                // Try multiple possible keys
+                const variantValues = Object.values(item.variants).map(v => String(v).trim());
+                const variantKeys = Object.keys(item.variants).map(k => String(k).trim());
+                const joinedValueKey = variantValues.join('-');
+                const joinedKeyValue = variantKeys.map(k => `${k}:${item.variants[k]}`).join('-');
+                const normalizedKeys = [
+                    joinedValueKey,
+                    joinedValueKey.toLowerCase(),
+                    joinedKeyValue,
+                    joinedKeyValue.toLowerCase(),
+                ];
+                // Try all possible key orderings (if 2 variants)
+                if (variantValues.length === 2) {
+                    const reversedValueKey = [...variantValues].reverse().join('-');
+                    const reversedKeyValue = [...variantKeys].reverse().map(k => `${k}:${item.variants[k]}`).join('-');
+                    normalizedKeys.push(reversedValueKey, reversedValueKey.toLowerCase(), reversedKeyValue, reversedKeyValue.toLowerCase());
+                }
+                for (const key of normalizedKeys) {
+                    if (product.variantImages[key]) {
+                        imageSrc = product.variantImages[key];
+                        variantImageFound = true;
+                        console.log('[VARYANT GÖRSELİ] Bulundu:', key, imageSrc);
+                        break;
+                    }
+                }
+                if (!variantImageFound) {
+                    console.warn('[VARYANT GÖRSELİ] Hiçbir anahtar eşleşmedi. Denenen anahtarlar:', normalizedKeys, 'Mevcut anahtarlar:', Object.keys(product.variantImages));
+                }
+            }
+            if (!variantImageFound && product.image) {
+                imageSrc = product.image;
+            }
+        }
+    }
+} catch (e) {
+    console.warn('Varyant görseli alınırken hata:', e);
+}
+return { ...item, _resolvedImage: imageSrc };
+                                }));
+                                return { ...order, _itemsWithImages: itemsWithImages };
+                            }));
+
+                            ordersList.innerHTML = ordersWithProductImages.map(order => {
+    // Teslimat adresini stringe dönüştür
+    let shippingStr = '';
+    if (order.shippingAddress && typeof order.shippingAddress === 'object') {
+        const a = order.shippingAddress;
+        shippingStr = [a.title, a.details, a.street, a.neighborhood, a.district, a.city, a.zipCode ? 'PK: ' + a.zipCode : '', a.phone ? 'Tel: ' + a.phone : ''].filter(Boolean).join(', ');
+    } else if (order.shippingAddress) {
+        shippingStr = order.shippingAddress;
+    } else if (order.shippingInfo) {
+        shippingStr = formatAddress(order.shippingInfo);
+    }
+    // Fatura adresini stringe dönüştür
+    let billingStr = '';
+    if (order.billingAddress && typeof order.billingAddress === 'object') {
+        const a = order.billingAddress;
+        billingStr = [a.title, a.details, a.street, a.neighborhood, a.district, a.city, a.zipCode ? 'PK: ' + a.zipCode : '', a.phone ? 'Tel: ' + a.phone : ''].filter(Boolean).join(', ');
+    } else if (order.billingAddress) {
+        billingStr = order.billingAddress;
+    } else if (order.billingInfo) {
+        billingStr = formatAddress(order.billingInfo);
+    }
+    return `
+        <div class="order-card">
+            <div class="order-header">
+                <span>Sipariş No: #${order.orderNo}</span>
+                <span>Tarih: ${order.date} ${order.time ? ('- ' + order.time) : ''}</span>
+            </div>
+            <div class="order-content">
+                <div class="order-products">
+                    ${order._itemsWithImages.map(item => `
+                        <div class="order-product-row" style="display:flex;align-items:center; margin-bottom:20px; margin-left:20px; padding-bottom:0px;">
+                            <div class="product-image" style="margin-right:16px; width:120px; height:120px;">
+                                <img src="${item._resolvedImage}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+                            </div>
+                            <div style="flex:1;">
+                                <h3 style="font-size:1.1rem;margin:0 0 2px 0; margin-bottom:5px;">${item.name}</h3>
+                                <div style="font-size:0.98rem; margin-bottom:5px;">Adet: ${item.quantity}</div>
+                                <div style="font-size:0.98rem; margin-bottom:5px;">Birim Fiyat: ${formatPrice(parseFloat(item.price))}</div>
+                                ${item.variant ? `<div style='font-size:0.98rem;'><b style='color:#dbb848;'>Varyant: ${item.variant.name ? (item.variant.name.charAt(0).toUpperCase() + item.variant.name.slice(1).toLowerCase()) + ': ' : ''}</b><span style='color:#fff;'>${item.variant.value || item.variant}</span></div>` : ''}
+                                ${item.variants && typeof item.variants === 'object' && Object.keys(item.variants).length > 0 ? Object.entries(item.variants).map(([key, value]) => `<div style='font-size:0.98rem;'><b style='color:#dbb848;'>${key.charAt(0).toUpperCase() + key.slice(1).toLowerCase()}:</b> <span style='color:#fff;'>${value}</span></div>`).join('') : ''}
+                            </div>
+                            <div class="item-total" style="font-size:1rem;font-weight:bold;min-width:90px;text-align:right;">${formatPrice(parseFloat(item.price) * item.quantity)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="order-info" style="margin-top:0px;">
+                    <div class="product-price" style="margin-bottom:5px;">Toplam: ${formatPrice(order.total)}</div>
+                    <div class="order-status ${order.status === 'Teslim Edildi' ? 'status-delivered' : 'status-shipping'}" style="margin: 0;">Durum: ${order.status ? order.status.replace(/u0131/g, 'ı').replace(/u0130/g, 'İ').replace(/u00fc/g, 'ü').replace(/u00dc/g, 'Ü').replace(/u015f/g, 'ş').replace(/u015e/g, 'Ş').replace(/u00f6/g, 'ö').replace(/u00d6/g, 'Ö').replace(/u00e7/g, 'ç').replace(/u00c7/g, 'Ç').replace(/u011f/g, 'ğ').replace(/u011e/g, 'Ğ') : 'Bilinmiyor'}</div>
+                    <div class="order-addresses" style="margin-top:8px; min-width:220px; max-width:320px; float:right; text-align:right; padding-left:50px;">
+    ${shippingStr ? `<div class="order-shipping-address" style="margin-bottom:5px; font-size:0.93rem; background:#232323; border-radius:6px; padding:7px 10px 6px 10px; display:inline-block; min-width:170px; text-align:left;">
+        <div style="font-weight:bold; color:#dbb848; font-size:0.97rem; margin-bottom:2px; text-align:left;">Teslimat Adresi:</div>
+        <div style="color:#fff;">${shippingStr}</div>
+    </div>` : ''}
+    ${billingStr ? `<div class="order-billing-address" style="margin-bottom:0; font-size:0.93rem; background:#232323; border-radius:6px; padding:7px 10px 6px 10px; display:inline-block; min-width:170px; text-align:left;">
+        <div style="font-weight:bold; color:#dbb848; font-size:0.97rem; margin-bottom:2px; text-align:left;">Fatura Adresi:</div>
+        <div style="color:#fff;">${billingStr}</div>
+    </div>` : ''}
+</div>
+                </div>
+            </div>
+        </div>
+    `;
+}).join('');
+                        } catch (error) {
+                            console.error('Siparişler alınırken hata:', error);
+                            ordersList.innerHTML = '<div class="order-card"><div class="order-header"><span>Siparişler alınırken bir hata oluştu.</span></div></div>';
+                        }
+                    }
+                    </script>
+                </div>
+
+                <!-- Favorites Section -->
+                <div id="favorites" class="section-content">
+                    <h2>Favorilerim</h2>
+                    <div class="favorites-list"></div>
+                    <script type="module" src="favorites.js"></script>
+                </div>
+
+                <!-- Notifications Section -->
+                <div id="notifications" class="section-content">
+                    <h2>Bildirimlerim</h2>
+                    <div id="notifications-list"></div>
+                    <script>
+                    function generateRandomTrackingNo() {
+                        return 'TR' + Math.floor(100000000 + Math.random() * 900000000);
+                    }
+                    async function renderNotificationsWithUser(user) {
+                        const notificationsList = document.getElementById('notifications-list');
+                        if (!notificationsList) return;
+                        
+                        // Yükleniyor mesajı göster
+                        notificationsList.innerHTML = `
+                            <div class="notification-item" style="text-align: center; padding: 2rem;">
+                                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #c9a227; margin-bottom: 1rem; display: block;"></i>
+                                <div>Bildirimler yükleniyor...</div>
+                            </div>
+                        `;
+                        
+                        try {
+                            // Firestore'dan bildirimleri al
+                            const notificationsRef = firebase.firestore().collection('notifications');
+                            const notificationsSnapshot = await notificationsRef
+                                .where('userId', '==', user.uid)
+                                .orderBy('createdAt', 'desc') // İndeks oluşturulduğu için orderBy kullanabiliyoruz
+                                .limit(20)
+                                .get();
+                            
+                            if (notificationsSnapshot.empty) {
+                                notificationsList.innerHTML = `
+                                    <div class="notification-item" style="text-align: center; padding: 2rem;">
+                                        <i class="far fa-bell" style="font-size: 2rem; color: #c9a227; margin-bottom: 1rem; display: block;"></i>
+                                        <div>Henüz bildiriminiz yok.</div>
+                                        <div style="font-size: 0.9rem; color: #999; margin-top: 0.5rem;">Siparişlerinizle ilgili bildirimler burada görüntülenecektir.</div>
+                                    </div>
+                                `;
+                                return;
+                            }
+                            
+                            // Bildirimleri diziye dönüştür
+                            const notifications = [];
+                            notificationsSnapshot.forEach(doc => {
+                                notifications.push({
+                                    id: doc.id,
+                                    ...doc.data()
+                                });
+                            });
+                            
+                            // Bildirimleri görüntüle
+                            notificationsList.innerHTML = notifications.map(notification => {
+                                // Bildirim türüne göre içerik oluştur
+                                let content = '';
+                                let icon = '';
+                                let additionalInfo = '';
+                                
+                                const date = notification.createdAt ? new Date(notification.createdAt.toDate()) : new Date();
+                                const formattedDate = `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                                
+                                switch(notification.type) {
+                                    case 'order_created':
+                                        icon = '';
+                                        content = 'Siparişiniz başarıyla oluşturuldu!';
+                                        break;
+                                    case 'order_processing':
+                                        icon = '<i class="fas fa-cog" style="color: #c9a227;"></i>';
+                                        content = 'Siparişiniz hazırlanıyor.';
+                                        break;
+                                    case 'order_shipped':
+                                        icon = '<i class="fas fa-truck" style="color: #c9a227;"></i>';
+                                        content = 'Siparişiniz kargoya verildi!';
+                                        if (notification.trackingNo) {
+                                            additionalInfo = `<div class="notification-shipping"><span>📦 Takip numarası: ${notification.trackingNo}</span></div>`;
+                                        }
+                                        break;
+                                    case 'order_delivered':
+                                        icon = '<i class="fas fa-check-circle" style="color: #c9a227;"></i>';
+                                        content = 'Siparişiniz teslim edildi!';
+                                        break;
+                                    case 'order_canceled':
+                                        icon = '<i class="fas fa-times-circle" style="color: #c9a227;"></i>';
+                                        content = 'Siparişiniz iptal edildi.';
+                                        break;
+                                    case 'promotion':
+                                        icon = '<i class="fas fa-gift" style="color: #c9a227;"></i>';
+                                        content = notification.message || 'Yeni bir kampanya var!';
+                                        break;
+                                    default:
+                                        icon = '<i class="fas fa-bell" style="color: #c9a227;"></i>';
+                                        content = notification.message || 'Yeni bildirim';
+                                }
+                                
+                                return `
+                                    <div class="notification-item" data-id="${notification.id}" ${notification.isRead ? '' : 'style="border-left: 3px solid #c9a227;"'}>
+                                        <div class="notification-header">
+                                            <span>${formattedDate}</span> ${icon} <span style="flex-grow: 1;"></span>
+                                            <span style="margin-left: auto;">${notification.relatedOrderId ? 'Sipariş No: #' + notification.relatedOrderId : 'Bildirim'}</span>
+                                        </div>
+                                        <div class="notification-content">
+                                            ${content}
+                                        </div>
+                                        ${additionalInfo}
+                                    </div>
+                                `;
+                            }).join('');
+                            
+                            // Bildirimleri okundu olarak işaretle
+                            const unreadNotifications = notifications.filter(n => !n.isRead);
+                            if (unreadNotifications.length > 0) {
+                                const batch = firebase.firestore().batch();
+                                unreadNotifications.forEach(notification => {
+                                    const notificationRef = firebase.firestore().collection('notifications').doc(notification.id);
+                                    batch.update(notificationRef, { isRead: true });
+                                });
+                                await batch.commit();
+                            }
+                            
+                            // Bildirim öğelerine tıklama olayı ekle
+                            document.querySelectorAll('.notification-item').forEach(item => {
+                                item.addEventListener('click', function() {
+                                    const notificationId = this.getAttribute('data-id');
+                                    const relatedOrderId = notifications.find(n => n.id === notificationId)?.relatedOrderId;
+                                    
+                                    if (relatedOrderId) {
+                                        // İlgili siparişe git
+                                        showSection('orders');
+                                        // URL'yi güncelle
+                                        window.location.hash = 'orders';
+                                    }
+                                });
+                            });
+                            
+                        } catch (error) {
+                            console.error('Bildirimler alınırken hata oluştu:', error);
+                            notificationsList.innerHTML = `
+                                <div class="notification-item" style="text-align: center; padding: 2rem;">
+                                    <i class="fas fa-exclamation-circle" style="font-size: 2rem; color: #c9a227; margin-bottom: 1rem; display: block;"></i>
+                                    <div>Bildirimler yüklenirken bir hata oluştu.</div>
+                                    <button class="btn" onclick="renderNotificationsWithUser(firebase.auth().currentUser)" style="margin-top: 1rem;">Tekrar Dene</button>
+                                </div>
+                            `;
+                        }
+                    }
+                    </script>
+                </div>
+
+                <!-- Support Section -->
+                <div id="support" class="section-content">
+                    <h2>Destek & SSS</h2>
+                    <div class="support-contact">
+                        <h3>Size Nasıl Yardımcı Olabiliriz?</h3>
+                        <p>7/24 müşteri hizmetleri ekibimiz size yardımcı olmak için hazır.</p>
+                        <div class="contact-options">
+                            <div class="contact-option">
+                                <div>📞 Telefon</div>
+                                <div>0850 123 4567</div>
+                            </div>
+                            <div class="contact-option">
+                                <div>✉️ E-posta</div>
+                                <div>destek@aristocart.com</div>
+                            </div>
+                            <div class="contact-option">
+                                <div>💬 Canlı Destek</div>
+                                <div>Şimdi Başlat!</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="faq-section">
+                        <h3 style="margin-bottom: 1.5rem; color: #c9a227;">Sıkça Sorulan Sorular</h3>
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                Siparişimi nasıl takip edebilirim?
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                Siparişlerim sayfasından sipariş numaranızı kullanarak veya size gönderilen takip numarası ile kargo firmasının web sitesinden takip edebilirsiniz.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                İade ve değişim politikanız nedir?
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                Ürünlerimizde 14 gün içerisinde iade ve değişim hakkınız bulunmaktadır. Ürünün kullanılmamış ve orijinal ambalajında olması gerekmektedir.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                Ödeme seçenekleriniz nelerdir?
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                Kredi kartı ve banka kartı ile ödeme seçeneklerimiz mevcuttur. Tüm ödemeleriniz 256-bit SSL ile güvence altındadır.
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                Kargo süreci nasıl işliyor?
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                Siparişleriniz 24 saat içinde hazırlanıp kargoya verilmektedir.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Addresses Section -->
+                <div id="addresses" class="section-content">
+                    <h2>Adreslerim</h2>
+                    
+                    <!-- Delivery Addresses -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="margin: 0; color: #c9a227; font-size: 1.3rem;">Teslimat Adreslerim</h3>
+                            <button onclick="openAddressModal('delivery')" class="btn btn-primary" style="background-color: #c9a227; color: #000; padding: 0.6rem 1.2rem; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.95rem; transition: all 0.3s ease;">
+                                <i class="fas fa-plus"></i> Yeni Adres Ekle
+                            </button>
+                        </div>
+                        <div class="address-section" style="background-color: rgba(26, 26, 26, 0.8); border: 1px solid rgba(201, 162, 39, 0.15); border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                            <div id="delivery-address-list" class="address-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+                                <div style="text-align: center; padding: 1.5rem; grid-column: 1 / -1;">
+                                    <i class="fas fa-truck" style="font-size: 1.75rem; color: #c9a227; margin-bottom: 0.75rem; display: block;"></i>
+                                    <div style="margin-bottom: 0.25rem;">Henüz kayıtlı teslimat adresiniz bulunmamaktadır.</div>
+                                    <div style="font-size: 0.85rem; color: #999;">'Yeni Adres Ekle' butonunu kullanabilirsiniz.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Billing Addresses -->
+                    <div style="margin-top: 2.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="margin: 0; color: #c9a227; font-size: 1.3rem;">Fatura Adreslerim</h3>
+                            <button onclick="openAddressModal('billing')" class="btn btn-primary" style="background-color: #c9a227; color: #000; padding: 0.6rem 1.2rem; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.95rem; transition: all 0.3s ease;">
+                                <i class="fas fa-plus"></i> Yeni Adres Ekle
+                            </button>
+                        </div>
+                        <div class="address-section" style="background-color: rgba(26, 26, 26, 0.8); border: 1px solid rgba(201, 162, 39, 0.15); border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                            <div id="billing-address-list" class="address-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+                                <div style="text-align: center; padding: 1.5rem; grid-column: 1 / -1;">
+                                    <i class="fas fa-file-invoice-dollar" style="font-size: 1.75rem; color: #c9a227; margin-bottom: 0.75rem; display: block;"></i>
+                                    <div style="margin-bottom: 0.25rem;">Henüz kayıtlı fatura adresiniz bulunmamaktadır.</div>
+                                    <div style="font-size: 0.85rem; color: #999;">'Yeni Adres Ekle' butonunu kullanabilirsiniz.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Address Modal -->
+                <div id="addressModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); overflow-y: auto; padding: 2rem 0;">
+                    <div class="modal-content" style="background-color: #000; margin: 2rem auto; padding: 2rem; border: 1px solid #c9a227; width: 90%; max-width: 700px; max-height: 90vh; border-radius: 8px; position: relative; display: flex; flex-direction: column;">
+                        <div style="position: sticky; top: 0; background-color: #000; z-index: 10; padding-bottom: 1rem; border-bottom: 1px solid rgba(201, 162, 39, 0.2);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3 id="modalTitle" style="margin: 0; color: #c9a227; font-size: 1.5rem;">Yeni Adres Ekle</h3>
+                                <span class="close-modal" onclick="closeAddressModal()" style="font-size: 2rem; cursor: pointer; color: #c9a227; line-height: 1;">&times;</span>
+                            </div>
+                        </div>
+                        <div style="overflow-y: auto; padding: 1rem 0.5rem; flex-grow: 1;">
+                        <input type="hidden" id="address-type">
+                        <div class="form-group">
+                            <label class="form-label">Adres Başlığı</label>
+                            <input type="text" id="address-title" class="form-input" placeholder="Ev, İş, Diğer...">
+                        </div>
+                        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label class="form-label">İl</label>
+                                <input type="text" id="address-city" class="form-input" placeholder="İl">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">İlçe</label>
+                                <input type="text" id="address-district" class="form-input" placeholder="İlçe">
+                            </div>
+                        </div>
+                        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label class="form-label">Mahalle</label>
+                                <input type="text" id="address-neighborhood" class="form-input" placeholder="Mahalle">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Cadde/Sokak</label>
+                                <input type="text" id="address-street" class="form-input" placeholder="Cadde veya Sokak Adı">
+                            </div>
+                        </div>
+                        <div class="form-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                            <div class="form-group">
+                                <label class="form-label">Bina No</label>
+                                <input type="text" id="address-building-number" class="form-input" placeholder="Bina No">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Kat No</label>
+                                <input type="text" id="address-apartment-number" class="form-input" placeholder="Kat No">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Daire No</label>
+                                <input type="text" id="address-door-number" class="form-input" placeholder="Daire No">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Adres Tarifi</label>
+                            <textarea id="address-details" class="form-input" rows="3" placeholder="Diğer bilgileri giriniz..."></textarea>
+                        </div>
+                        <div style="position: sticky; background-color: #000; z-index: 10; padding-top: 1.5rem; border-top: 1px solid rgba(201, 162, 39, 0.2); margin-top: 1rem;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                <button onclick="closeAddressModal()" class="btn btn-secondary" style="background-color: #333; color: #fff; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 1rem; transition: all 0.3s ease;">
+                                    İptal
+                                </button>
+                                <button onclick="saveAddress()" class="btn btn-primary" style="background-color: #c9a227; color: #000; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1rem; transition: all 0.3s ease;">
+                                    Adresi Kaydet
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Load and display user information
+        // ESKİ YÖNTEM KALDIRILDI, YENİ FİREBASE YÖNTEMİ KULLANILACAK
+        // document.addEventListener('DOMContentLoaded', function() {
+        //     const currentUser = JSON.parse(localStorage.getItem('currentUser')) || JSON.parse(sessionStorage.getItem('currentUser'));
+        //     if (currentUser) {
+        //         document.getElementById('customerName').textContent = `${currentUser.firstName} ${currentUser.lastName}`;
+        //     } else {
+        //         location.href = 'login.html';
+        //     }
+        // });
+        let isUserEditing = false; // Kullanıcının form üzerinde çalışıp çalışmadığını takip et
+
+        // Form alanlarına focusin/focusout event listener'ları ekle
+        document.querySelectorAll('.form-input').forEach(input => {
+            input.addEventListener('focus', () => {
+                isUserEditing = true;
+            });
+            
+            input.addEventListener('blur', () => {
+                isUserEditing = false;
+            });
+        });
+
+        // Adres düzenleme modalını aç
+        function openEditAddressModal(address, card) {
+            editingAddressId = address.id;
+            editingAddressCard = card;
+            const modal = document.getElementById('addressModal');
+            const title = document.getElementById('modalTitle');
+            const typeInput = document.getElementById('address-type');
+            title.textContent = address.type === 'delivery' ? 'Teslimat Adresi Düzenle' : 'Fatura Adresi Düzenle';
+            typeInput.value = address.type;
+            document.getElementById('address-title').value = address.title || '';
+            document.getElementById('address-details').value = address.details || '';
+            document.getElementById('address-city').value = address.city || '';
+            document.getElementById('address-district').value = address.district || '';
+            document.getElementById('address-neighborhood').value = address.neighborhood || '';
+            document.getElementById('address-street').value = address.street || '';
+            document.getElementById('address-building-number').value = address.buildingNumber || '';
+            document.getElementById('address-apartment-number').value = address.apartmentNumber || '';
+            document.getElementById('address-door-number').value = address.doorNumber || '';
+            modal.style.display = 'flex';
+        }
+
+        // Kullanıcı bilgilerini güncelleme fonksiyonu
+        async function updateUserInfo() {
+            if (!validateAccountForm()) return;
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            const user = auth.currentUser;
+            if (!user) {
+                console.error('Oturum bulunamadı!');
+                
+                return;
+            }
+            // Formdan bilgileri al
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const phone = document.getElementById('phone').value.trim(); // formatlı haliyle al!
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const email = document.getElementById('email').value.trim();
+
+            // EK KORUMA: Telefon numarası validasyonunu burada da tekrar kontrol et
+            const phoneRegex = /^5\d{2}\s\d{3}\s\d{2}\s\d{2}$/;
+            if (!phoneRegex.test(phone)) {
+                document.getElementById('phoneError')?.classList.add('show');
+                console.error('Telefon numarası doğru formatta olmalı ve 5 ile başlamalı. (Örn: 555 123 45 67)');
+                return;
+            }
+
+            try {
+                // Eğer e-posta değiştiyse önce Firebase Auth'ta güncelle
+                if (email !== user.email) {
+                    const { updateEmail, sendEmailVerification } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+                    try {
+                        await updateEmail(user, email);
+                        // E-posta başarıyla değiştiyse doğrulama e-postası gönder
+                        await sendEmailVerification(user);
+                        console.log('Yeni e-posta adresinize bir doğrulama e-postası gönderildi. Lütfen e-postanızı onaylayın ve tekrar giriş yapın.');
+                        // Kullanıcıyı çıkışa yönlendir
+                        await auth.signOut();
+                        
+                        return;
+                    } catch (err) {
+                        console.error('E-posta güncellenemedi: ' + err.message);
+                        return;
+                    }
+                }
+                await updateDoc(doc(db, 'users', user.uid), {
+                    firstName,
+                    lastName,
+                    phone, // formatlı şekilde kaydet
+                    email // Firestore'da da güncelle
+                });
+                if (newPassword) {
+                    const { updatePassword } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+                    await updatePassword(user, newPassword);
+                }
+                console.log('Bilgileriniz başarıyla güncellendi!');
+                const fullName = `${firstName}${firstName && lastName ? ' ' : ''}${lastName}`.trim();
+                if(document.querySelector('.profile-name'))
+                    document.querySelector('.profile-name').textContent = fullName || 'Müşteri';
+                if(document.getElementById('customerName'))
+                    document.getElementById('customerName').textContent = fullName || 'Müşteri';
+                document.getElementById('currentPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+            } catch (err) {
+                console.error('Güncelleme sırasında hata oluştu: ' + err.message);
+            }
+        }
+        window.updateUserInfo = updateUserInfo;
+
+        // Adres düzenleme için global değişken
+        let editingAddressId = null;
+        let editingAddressCard = null;
+
+        // Address Modal Functions
+        function openAddressModal(type) {
+            editingAddressId = null;
+            editingAddressCard = null;
+            const modal = document.getElementById('addressModal');
+            const title = document.getElementById('modalTitle');
+            const typeInput = document.getElementById('address-type');
+            // Set modal title and type
+            const modalTitle = type === 'delivery' ? 'Yeni Teslimat Adresi Ekle' : 'Yeni Fatura Adresi Ekle';
+            title.textContent = modalTitle;
+            typeInput.value = type;
+            // Reset form
+            document.getElementById('address-title').value = '';
+            document.getElementById('address-details').value = '';
+            document.getElementById('address-city').value = '';
+            document.getElementById('address-district').value = '';
+            document.getElementById('address-neighborhood').value = '';
+            document.getElementById('address-street').value = '';
+            document.getElementById('address-building-number').value = '';
+            document.getElementById('address-apartment-number').value = '';
+            document.getElementById('address-door-number').value = '';
+            // Show modal
+            modal.style.display = 'flex';
+        }
+        
+        function closeAddressModal() {
+            editingAddressId = null;
+            editingAddressCard = null;
+            document.getElementById('addressModal').style.display = 'none';
+        }
+        
+        // Close modal when clicking outside the modal content
+        window.onclick = function(event) {
+            const modal = document.getElementById('addressModal');
+            if (event.target == modal) {
+                closeAddressModal();
+            }
+        }
+        
+        // Save address function
+        async function saveAddress() {
+            // Eğer düzenleme modundaysa, Firestore'da güncelle
+            if (editingAddressId) {
+                // Firebase referanslarını kontrol et
+                let app, db, auth;
+                if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+                    app = firebase.app();
+                    db = firebase.firestore();
+                    auth = firebase.auth();
+                } else if (typeof getAuth !== 'undefined' && typeof getFirestore !== 'undefined') {
+                    app = getApp();
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                } else {
+                    alert('Firebase başlatılamadı. Lütfen sayfayı yenileyin.');
+                    return;
+                }
+                const user = auth.currentUser;
+                if (!user) {
+                    alert('Lütfen giriş yapınız.');
+                    return;
+                }
+                const type = document.getElementById('address-type').value;
+                const title = document.getElementById('address-title').value.trim();
+                const details = document.getElementById('address-details').value.trim();
+                const city = document.getElementById('address-city').value.trim();
+                const district = document.getElementById('address-district').value.trim();
+                const neighborhood = document.getElementById('address-neighborhood').value.trim();
+                const street = document.getElementById('address-street').value.trim();
+                const buildingNumber = document.getElementById('address-building-number').value.trim();
+                const apartmentNumber = document.getElementById('address-apartment-number').value.trim();
+                const doorNumber = document.getElementById('address-door-number').value.trim();
+                if (!title || !details || !city || !district || !neighborhood || !street || !buildingNumber || !apartmentNumber || !doorNumber) {
+                    window.showCustomPopup('Lütfen tüm alanları doldurunuz.', { confirm: false });
+                    return;
+                }
+                try {
+                    const addressData = {
+                        type,
+                        title,
+                        details,
+                        city,
+                        district,
+                        neighborhood,
+                        street,
+                        buildingNumber,
+                        apartmentNumber,
+                        doorNumber,
+                        updatedAt: new Date().toISOString(),
+                        isDefault: false,
+                        id: editingAddressId
+                    };
+                    await db.collection('users').doc(user.uid).collection('addresses').doc(editingAddressId).set(addressData, { merge: true });
+                    // UI'da kartı güncelle
+                    if (editingAddressCard) {
+                        editingAddressCard.remove();
+                    }
+                    addAddressToUI(addressData);
+                    closeAddressModal();
+                    window.showCustomPopup('Adres güncellendi!', { confirm: false });
+                } catch (err) {
+                    alert('Adres güncellenirken hata oluştu.');
+                }
+                return;
+            }
+            // Firebase referanslarını kontrol et
+            let app, db, auth;
+            if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+                app = firebase.app();
+                db = firebase.firestore();
+                auth = firebase.auth();
+            } else if (typeof getAuth !== 'undefined' && typeof getFirestore !== 'undefined') {
+                app = getApp();
+                db = getFirestore(app);
+                auth = getAuth(app);
+            } else {
+                alert('Firebase başlatılamadı. Lütfen sayfayı yenileyin.');
+                return;
+            }
+
+            const type = document.getElementById('address-type').value;
+            const title = document.getElementById('address-title').value.trim();
+            const details = document.getElementById('address-details').value.trim();
+            const city = document.getElementById('address-city').value.trim();
+            const district = document.getElementById('address-district').value.trim();
+            const neighborhood = document.getElementById('address-neighborhood').value.trim();
+            const street = document.getElementById('address-street').value.trim();
+            const buildingNumber = document.getElementById('address-building-number').value.trim();
+            const apartmentNumber = document.getElementById('address-apartment-number').value.trim();
+            const doorNumber = document.getElementById('address-door-number').value.trim();
+
+            // Basic validation
+            if (!title || !details || !city || !district || !neighborhood || !street || !buildingNumber || !apartmentNumber || !doorNumber) {
+                window.showCustomPopup('Lütfen tüm alanları doldurunuz.', { confirm: false });
+                return;
+            }
+
+            try {
+                const user = auth.currentUser;
+                if (!user) {
+                    alert('Lütfen giriş yapınız.');
+                    return;
+                }
+
+                const addressData = {
+                    type,
+                    title,
+                    details,
+                    city,
+                    district,
+                    neighborhood,
+                    street,
+                    buildingNumber,
+                    apartmentNumber,
+                    doorNumber,
+                    createdAt: new Date().toISOString(),
+                    isDefault: false
+                };
+
+                // Firestore'a ekle
+                const docRef = await db.collection('users').doc(user.uid)
+                    .collection('addresses').add(addressData);
+                addressData.id = docRef.id;
+                addAddressToUI(addressData);
+                closeAddressModal();
+                window.showCustomPopup('Adres başarıyla kaydedildi!', { confirm: false });
+            } catch (error) {
+                console.error('Adres kaydedilirken hata oluştu:', error);
+                alert('Adres kaydedilirken bir hata oluştu. Lütfen tekrar deneyiniz.');
+            }
+        }
+        
+        function addAddressToUI(address) {
+            const addressListId = `${address.type}-address-list`;
+            const addressList = document.getElementById(addressListId);
+            
+            // Create address card
+            const addressCard = document.createElement('div');
+            addressCard.className = 'address-card';
+            addressCard.setAttribute('data-id', address.id || '');
+            addressCard.innerHTML = `
+                <div style="background-color: #1a1a1a; border: 1px solid rgba(201, 162, 39, 0.2); border-radius: 8px; padding: 1.5rem; height: 100%;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                        <h4 style="margin: 0; color: #c9a227; font-size: 1.1rem;">${address.title}</h4>
+                        <span style="color: #c9a227; font-size: 0.9rem;">${address.isDefault ? 'Varsayılan' : ''}</span>
+                    </div>
+                    <div style="color: #ccc; margin-bottom: 1rem; line-height: 1.5;">
+                        <p style="margin: 0.25rem 0;"><b>${address.neighborhood}</b></p>
+                        <p style="margin: 0.25rem 0;"><b>${address.street}</b></p>
+                        <p style="margin: 0.25rem 0;">
+                            <span style='white-space:nowrap;'>Bina: ${address.buildingNumber}</span>,
+                            <span style='white-space:nowrap;'>Kat: ${address.apartmentNumber}</span>,
+                            <span style='white-space:nowrap;'>Daire: ${address.doorNumber}</span>
+                        </p>
+                        <p style="margin: 0.25rem 0;">${address.details}</p>
+                        <p style="margin: 0.25rem 0;">${address.district} / ${address.city}</p>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                        <button class="btn btn-sm" style="background: #c9a227; color: #000; border: none; padding: 0.35rem 1.1rem; border-radius: 4px; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;">
+    Düzenle
+</button>
+<button class="btn btn-sm" style="background: #dc3545; color: #fff; border: 2px solid #dc3545; padding: 0.35rem 1.1rem; border-radius: 4px; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;">
+    Sil
+</button>
+                    </div>
+                </div>
+            `;
+            
+            // 'Henüz ... adresiniz bulunmamaktadır.' mesajı varsa kaldır
+            const emptyMsg = addressList.querySelector('div');
+            if (emptyMsg && emptyMsg.textContent.includes('Henüz kayıtlı')) {
+                addressList.removeChild(emptyMsg);
+            }
+            
+            // Add the new address card
+            addressList.appendChild(addressCard);
+
+            // Sil ve Düzenle butonları için event listener ekle
+            const editBtn = addressCard.querySelector('button:nth-child(1)');
+            const deleteBtn = addressCard.querySelector('button:nth-child(2)');
+
+            // Sil
+            deleteBtn.addEventListener('click', async function(e) {
+                e.stopPropagation();
+                const confirmDelete = await window.showCustomPopup('Bu adresi silmek istediğinize emin misiniz?', { confirm: true });
+                if (!confirmDelete) return;
+                if (!address.id) {
+                    window.showCustomPopup('Adres silinemiyor: Adres kimliği bulunamadı. Lütfen sayfayı yenileyin.', { confirm: false });
+                    return;
+                }
+                // Firebase referansları
+                let app, db, auth;
+                if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+                    app = firebase.app();
+                    db = firebase.firestore();
+                    auth = firebase.auth();
+                } else if (typeof getAuth !== 'undefined' && typeof getFirestore !== 'undefined') {
+                    app = getApp();
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                } else {
+                    alert('Firebase başlatılamadı. Lütfen sayfayı yenileyin.');
+                    return;
+                }
+                const user = auth.currentUser;
+                if (!user) {
+                    alert('Lütfen giriş yapınız.');
+                    return;
+                }
+                try {
+                    await db.collection('users').doc(user.uid).collection('addresses').doc(address.id).delete();
+                    addressCard.remove();
+                    window.showCustomPopup('Adres başarıyla silindi!', { confirm: false });
+                } catch (err) {
+                    alert('Adres silinirken hata oluştu.');
+                }
+            });
+
+            // Düzenle
+            editBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                openEditAddressModal(address, addressCard);
+            });
+        }
+        
+        // Add FAQ toggle functionality
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', () => {
+                const faqItem = question.parentElement;
+                faqItem.classList.toggle('active');
+                const toggle = question.querySelector('.faq-toggle');
+                toggle.textContent = faqItem.classList.contains('active') ? '-' : '+';
+            });
+        });
+
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Adresleri Firestore'dan yükle ve ekrana yaz
+async function loadAddresses() {
+    let app, db, auth;
+    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+        app = firebase.app();
+        db = firebase.firestore();
+        auth = firebase.auth();
+    } else if (typeof getAuth !== 'undefined' && typeof getFirestore !== 'undefined') {
+        app = getApp();
+        db = getFirestore(app);
+        auth = getAuth(app);
+    } else {
+        return;
+    }
+    const user = auth.currentUser;
+    if (!user) return;
+    // Teslimat adresleri
+    db.collection('users').doc(user.uid).collection('addresses')
+        .where('type', '==', 'delivery')
+        .get()
+        .then(snapshot => {
+            snapshot.forEach(doc => {
+                addAddressToUI({ ...doc.data(), id: doc.id });
+            });
+        });
+    // Fatura adresleri
+    db.collection('users').doc(user.uid).collection('addresses')
+        .where('type', '==', 'billing')
+        .get()
+        .then(snapshot => {
+            snapshot.forEach(doc => {
+                addAddressToUI({ ...doc.data(), id: doc.id });
+            });
+        });
+}
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof firebase !== 'undefined' || (typeof getAuth !== 'undefined' && typeof getFirestore !== 'undefined')) {
+        setTimeout(loadAddresses, 700); // auth.currentUser'ın dolmasını bekle
+    }
+});
+// Sepet işlevselliliği - Firestore tabanlı
+        
+        // Sepet sayacını güncelle - customer-cart.js ile uyumlu (gerçek zamanlı güncelleme)
+        let cartCountUnsubscribe = null; // Dinleyici referansı
+        
+        async function updateCartCount() {
+            console.log("customer-section.html'den updateCartCount ÇAĞRILDI");
+            const cartCount = document.querySelector('.cart-count');
+            if (!cartCount) return;
+            
+            try {
+                // Önce mevcut dinleyiciyi temizle
+                if (cartCountUnsubscribe) {
+                    cartCountUnsubscribe();
+                    cartCountUnsubscribe = null;
+                }
+                
+                // Hem modüler hem de global Firebase kullanımını destekle
+                let user;
+                
+                // Önce global Firebase'i kontrol et
+                if (typeof firebase !== 'undefined' && firebase.auth) {
+                    user = firebase.auth().currentUser;
+                } 
+                // Global Firebase yoksa modüler Firebase'i kullan
+                else if (typeof getAuth !== 'undefined') {
+                    const auth = getAuth(app);
+                    user = auth.currentUser;
+                }
+                
+                // Kullanıcı yoksa sepet sayısını sıfırla
+                if (!user) {
+                    cartCount.textContent = '0';
+                    cartCount.style.display = ''; // Görünür yap
+                    console.log('Kullanıcı bulunamadı, sepet sayısı sıfırlandı');
+                    return;
+                }
+                
+                // Görünürlük ayarı
+                cartCount.style.display = '';
+                
+                // Firestore gerçek zamanlı dinleyici ekle
+                if (typeof firebase !== 'undefined' && firebase.firestore) {
+                    // Global Firebase kullan
+                    const cartRef = firebase.firestore().collection('carts').doc(user.uid);
+                    
+                    // Gerçek zamanlı dinleyici ekle
+                    cartCountUnsubscribe = cartRef.onSnapshot(snapshot => {
+                        if (snapshot.exists && snapshot.data().items) {
+                            const cartItems = snapshot.data().items || [];
+                            
+                            // Toplam ürün adedini hesapla (miktarı dikkate alarak)
+                            const totalQuantity = cartItems.reduce((total, item) => {
+                                return total + (parseInt(item.quantity) || 1);
+                            }, 0);
+                            
+                            cartCount.textContent = totalQuantity;
+                            console.log('Sepet sayısı gerçek zamanlı güncellendi:', totalQuantity);
+                        } else {
+                            cartCount.textContent = '0';
+                        }
+                    }, error => {
+                        console.error('Sepet dinleyici hatası:', error);
+                        cartCount.textContent = '0';
+                    });
+                } else if (typeof getFirestore !== 'undefined' && typeof doc !== 'undefined' && typeof onSnapshot !== 'undefined') {
+                    // Modüler Firebase kullan
+                    const db = getFirestore(app);
+                    const cartRef = doc(db, 'carts', user.uid);
+                    
+                    // Gerçek zamanlı dinleyici ekle
+                    cartCountUnsubscribe = onSnapshot(cartRef, snapshot => {
+                        if (snapshot.exists() && snapshot.data().items) {
+                            const cartItems = snapshot.data().items || [];
+                            
+                            // Toplam ürün adedini hesapla (miktarı dikkate alarak)
+                            const totalQuantity = cartItems.reduce((total, item) => {
+                                return total + (parseInt(item.quantity) || 1);
+                            }, 0);
+                            
+                            cartCount.textContent = totalQuantity;
+                            console.log('Sepet sayısı gerçek zamanlı güncellendi (modüler):', totalQuantity);
+                        } else {
+                            cartCount.textContent = '0';
+                        }
+                    }, error => {
+                        console.error('Sepet dinleyici hatası (modüler):', error);
+                        cartCount.textContent = '0';
+                    });
+                } else {
+                    // Dinleyici kurulamadı, tek seferlik güncelleme yap
+                    console.warn('Gerçek zamanlı dinleyici kurulamadı, tek seferlik güncelleme yapılıyor');
+                    
+                    // Firestore referansını al (global veya modüler)
+                    let cartSnap;
+                    if (typeof firebase !== 'undefined' && firebase.firestore) {
+                        // Global Firebase kullan
+                        const cartRef = firebase.firestore().collection('carts').doc(user.uid);
+                        cartSnap = await cartRef.get();
+                    } else if (typeof getFirestore !== 'undefined' && typeof getDoc !== 'undefined') {
+                        // Modüler Firebase kullan
+                        const db = getFirestore(app);
+                        const cartRef = doc(db, 'carts', user.uid);
+                        cartSnap = await getDoc(cartRef);
+                    } else {
+                        console.error('Firebase kullanılamıyor!');
+                        cartCount.textContent = '0';
+                        return;
+                    }
+                    
+                    // Sepet verilerini işle
+                    const cartExists = typeof cartSnap.exists === 'function' ? cartSnap.exists() : cartSnap.exists;
+                    if (!cartExists || !cartSnap.data().items) {
+                        cartCount.textContent = '0';
+                        return;
+                    }
+                    const cartItems = cartSnap.data().items || [];
+                    
+                    // Toplam ürün adedini hesapla (miktarı dikkate alarak)
+                    const totalQuantity = cartItems.reduce((total, item) => {
+                        return total + (parseInt(item.quantity) || 1);
+                    }, 0);
+                    
+                    cartCount.textContent = totalQuantity;
+                }
+            } catch (error) {
+                console.error('Sepet sayacı güncellenirken hata oluştu:', error);
+                cartCount.textContent = '0';
+            }
+        }
+        
+        // Sayfa kapanırken dinleyiciyi temizle
+        window.addEventListener('beforeunload', () => {
+            if (cartCountUnsubscribe) {
+                cartCountUnsubscribe();
+            }
+        });
+
+        // Firebase yüklendiğinde sepet sayacını güncelleme fonksiyonu
+        function initCartCounter() {
+            console.log('Sepet sayacı başlatılıyor...');
+            
+            // Firebase yüklenene kadar bekle
+            const checkFirebase = setInterval(() => {
+                if (typeof firebase !== 'undefined' && firebase.auth) {
+                    clearInterval(checkFirebase);
+                    console.log('Firebase yüklendi, auth dinleyicisi ekleniyor...');
+                    
+                    // Auth durumu değiştiğinde sepet sayacını güncelle
+                    firebase.auth().onAuthStateChanged(user => {
+                        console.log('Auth durumu değişti, kullanıcı:', user ? user.email : 'yok');
+                        if (user) {
+                            updateCartCount();
+                        }
+                    });
+                    
+                    // Hemen bir güncelleme dene
+                    updateCartCount();
+                }
+            }, 200);
+            
+            // Maksimum 10 saniye bekle
+            setTimeout(() => {
+                clearInterval(checkFirebase);
+            }, 10000);
+        }
+        
+        // Sayfa yüklendiginde sepet sayacını başlat
+        document.addEventListener('DOMContentLoaded', initCartCounter);
+        
+        // Hemen bir başlatma dene
+        initCartCounter();
+        
+        // Sepet güncellendi olayını dinle (sayfalar arası eşzamanlılık için)
+        window.addEventListener('cartUpdated', function() {
+            console.log('Sepet güncellendi olayı alındı');
+            updateCartCount();
+        });
+    </script>
+    <script type="module">
+        import { getAuth, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { app } from "./firebase-config.js";
+
+document.addEventListener('DOMContentLoaded', function() {
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            let firstName = '', lastName = '';
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                firstName = userData.firstName || '';
+                lastName = userData.lastName || '';
+                document.getElementById('firstName').value = firstName;
+                document.getElementById('lastName').value = lastName;
+                document.getElementById('email').value = user.email || '';
+                document.getElementById('phone').value = userData.phone || '';
+            }
+            const fullName = `${firstName}${firstName && lastName ? ' ' : ''}${lastName}`.trim();
+            if(document.querySelector('.profile-name'))
+                document.querySelector('.profile-name').textContent = fullName || 'Müşteri';
+            if(document.getElementById('customerName'))
+                document.getElementById('customerName').textContent = fullName || 'Müşteri';
+            renderOrdersWithUser(user);
+            renderNotificationsWithUser(user);
+        } else {
+            window.location.href = "login.html";
+        }
+    });
+
+    window.updateUserInfo = async function updateUserInfo() {
+        const user = auth.currentUser;
+        if (!user) {
+            console.error('Oturum bulunamadı!');
+            
+            return;
+        }
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+        const phone = document.getElementById('phone').value.trim(); // formatlı haliyle al!
+        const currentPassword = document.getElementById('currentPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const email = document.getElementById('email').value.trim();
+
+        if (!firstName || !lastName) {
+            window.showCustomPopup('Ad ve soyad boş bırakılamaz!', { confirm: false });
+            return;
+        }
+        // Şifre değişikliği isteniyorsa, tüm alanlar zorunlu
+        if (newPassword || confirmPassword || currentPassword) {
+            if (!currentPassword) {
+                window.showCustomPopup('Mevcut şifrenizi giriniz!', { confirm: false });
+                return;
+            }
+            if (!newPassword || !confirmPassword) {
+                window.showCustomPopup('Yeni şifre ve tekrar alanlarını doldurunuz!', { confirm: false });
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                window.showCustomPopup('Yeni şifreler eşleşmiyor!', { confirm: false });
+                return;
+            }
+            // EK KORUMA: Regex ile kontrol
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+            if (!passwordRegex.test(newPassword)) {
+                window.showCustomPopup('Şifre en az 8 karakter, bir büyük harf, bir küçük harf ve bir rakam içermelidir.', { confirm: false });
+                return;
+            }
+            if (newPassword.length < 8) {
+                window.showCustomPopup('Yeni şifre en az 8 karakter olmalı!', { confirm: false });
+                return;
+            }
+            // Firebase re-authenticate
+            const { EmailAuthProvider, reauthenticateWithCredential, updatePassword } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+            try {
+                const credential = EmailAuthProvider.credential(user.email, currentPassword);
+                await reauthenticateWithCredential(user, credential);
+            } catch (err) {
+                window.showCustomPopup('Mevcut şifreniz yanlış!', { confirm: false });
+                return;
+            }
+        }
+        // EK KORUMA: Telefon numarası validasyonunu burada da tekrar kontrol et
+        const phoneRegex = /^5\d{2}\s\d{3}\s\d{2}\s\d{2}$/;
+        if (!phoneRegex.test(phone)) {
+            document.getElementById('phoneError')?.classList.add('show');
+            window.showCustomPopup('Telefon numarası doğru formatta olmalı ve 5 ile başlamalı. (Örn: 555 123 45 67)', { confirm: false });
+            return;
+        }
+
+        try {
+            // Eğer e-posta değiştiyse önce Firebase Auth'ta güncelle
+            if (email !== user.email) {
+                const { updateEmail, sendEmailVerification } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+                try {
+                    await updateEmail(user, email);
+                    // E-posta başarıyla değiştiyse doğrulama e-postası gönder
+                    await sendEmailVerification(user);
+                    window.showCustomPopup('Yeni e-posta adresinize bir doğrulama e-postası gönderildi. Lütfen e-postanızı onaylayın ve tekrar giriş yapın.', { confirm: false });
+                    // Kullanıcıyı çıkışa yönlendir
+                    await auth.signOut();
+                    
+                    return;
+                } catch (err) {
+                    window.showCustomPopup('E-posta güncellenemedi: ' + err.message, { confirm: false });
+                    return;
+                }
+            }
+            await updateDoc(doc(db, 'users', user.uid), {
+                firstName,
+                lastName,
+                phone, // formatlı şekilde kaydet
+                email // Firestore'da da güncelle
+            });
+            if (newPassword) {
+                const { updatePassword } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+                await updatePassword(user, newPassword);
+            }
+            window.showCustomPopup('Bilgileriniz başarıyla güncellendi!', { confirm: false });
+            const fullName = `${firstName}${firstName && lastName ? ' ' : ''}${lastName}`.trim();
+            if(document.querySelector('.profile-name'))
+                document.querySelector('.profile-name').textContent = fullName || 'Müşteri';
+            if(document.getElementById('customerName'))
+                document.getElementById('customerName').textContent = fullName || 'Müşteri';
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+        } catch (err) {
+            alert('Güncelleme sırasında hata oluştu: ' + err.message);
+        }
+    }
+});
+// Firebase fonksiyonlarını klasik scriptlerde de kullanabilmek için window'a ekle (Türkçe açıklama)
+window.getAuth = getAuth;
+window.getFirestore = getFirestore;
+window.app = app;
+</script>
+    <script type="module">
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { app } from "./firebase-config.js";
+import { setupSavedCartsSection } from "./saved-carts.js";
+    document.addEventListener('DOMContentLoaded', function() {
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists()) {
+                        const data = userDoc.data();
+                        const fullName = `${data.firstName || ''}${data.firstName && data.lastName ? ' ' : ''}${data.lastName || ''}`.trim();
+                        document.getElementById('customerName').textContent = fullName || user.email || 'Müşteri';
+                        setProfileFields(data); // Profil alanlarını otomatik doldur ve telefonu formatla
+                    } else {
+                        document.getElementById('customerName').textContent = user.email || 'Müşteri';
+                    }
+                } catch (err) {
+                    document.getElementById('customerName').textContent = user.email || 'Müşteri';
+                }
+            } else {
+                document.getElementById('customerName').textContent = 'Müşteri';
+            }
+        });
+    });
+    </script>
+    <script>
+        // Tüm section-content bölümlerini gizle/göster fonksiyonu
+        function showSection(sectionId) {
+            // Tüm section-content'leri gizle
+            document.querySelectorAll('.section-content').forEach(section => {
+                section.style.display = 'none';
+            });
+            // İlgili bölümü göster
+            const selectedSection = document.getElementById(sectionId);
+            if (selectedSection) {
+                selectedSection.style.display = 'block';
+            }
+            // Nav link aktifliğini güncelle
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + sectionId) {
+                    link.classList.add('active');
+                }
+            });
+        }
+        // Sayfa yüklendiğinde ve hash değiştiğinde ilgili bölümü göster
+        function handleHash() {
+            const hash = window.location.hash.substring(1);
+            if (hash) {
+                showSection(hash);
+            } else {
+                showSection('account');
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            // Nav linklere tıklama olayı
+            document.querySelectorAll('.nav-link[data-section]').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    if (this.getAttribute('href').startsWith('#')) {
+                        e.preventDefault();
+                        const sectionId = this.dataset.section;
+                        showSection(sectionId);
+                        history.pushState(null, '', '#' + sectionId);
+                    }
+                });
+            });
+            // İlk yüklemede ve hash değişiminde çalıştır
+            handleHash();
+            window.addEventListener('hashchange', handleHash);
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const phoneInput = document.getElementById('phone');
+            if (phoneInput) {
+                // İlk yüklemede maskeyi uygula
+                let value = phoneInput.value.replace(/\D/g, '');
+                value = value.substring(0, 10);
+                let formattedValue = '';
+                for (let i = 0; i < value.length; i++) {
+                    if (i === 3 || i === 6 || i === 8) {
+                        formattedValue += ' ';
+                    }
+                    formattedValue += value[i];
+                }
+                phoneInput.value = formattedValue;
+
+                // Kullanıcı inputunda maskeyi uygula
+                phoneInput.addEventListener('input', function(e) {
+                    let value = e.target.value.replace(/\D/g, '');
+                    value = value.substring(0, 10);
+                    let formattedValue = '';
+                    for (let i = 0; i < value.length; i++) {
+                        if (i === 3 || i === 6 || i === 8) {
+                            formattedValue += ' ';
+                        }
+                        formattedValue += value[i];
+                    }
+                    e.target.value = formattedValue;
+                });
+            }
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const phoneInput = document.getElementById('phone');
+            if (phoneInput) {
+                // İlk yüklemede maskeyi uygula
+                let value = phoneInput.value.replace(/\D/g, '');
+                value = value.substring(0, 10);
+                let formattedValue = '';
+                for (let i = 0; i < value.length; i++) {
+                    if (i === 3 || i === 6 || i === 8) {
+                        formattedValue += ' ';
+                    }
+                    formattedValue += value[i];
+                }
+                phoneInput.value = formattedValue;
+
+                // Kullanıcı inputunda maskeyi uygula
+                phoneInput.addEventListener('input', function(e) {
+                    let value = e.target.value.replace(/\D/g, '');
+                    value = value.substring(0, 10);
+                    let formattedValue = '';
+                    for (let i = 0; i < value.length; i++) {
+                        if (i === 3 || i === 6 || i === 8) {
+                            formattedValue += ' ';
+                        }
+                        formattedValue += value[i];
+                    }
+                    e.target.value = formattedValue;
+                });
+            }
+        });
+    </script>
+
+    <script>
+        function formatPhoneTR(phone) {
+            // Sadece rakamları al
+            let value = (phone || '').replace(/\D/g, '').substring(0, 10);
+            let formatted = '';
+            for (let i = 0; i < value.length; i++) {
+                if (i === 3 || i === 6 || i === 8) formatted += ' ';
+                formatted += value[i];
+            }
+            return formatted;
+        }
+
+        // Profil bilgisi doldurulurken telefon otomatik formatlansın
+        function setProfileFields(data) {
+            if (data.firstName) document.getElementById('firstName').value = data.firstName;
+            if (data.lastName) document.getElementById('lastName').value = data.lastName;
+            if (data.email) document.getElementById('email').value = data.email;
+            if (data.phone) document.getElementById('phone').value = formatPhoneTR(data.phone);
+        }
+
+        // Firestore'dan veri çekildikten sonra profil alanlarını doldur
+        // (Zaten bir yerde Firestore'dan çekip inputlara atama yapıyorsan orada setProfileFields(data) çağır)
+    </script>
+    <script>
+        function validateAccountForm() {
+            let isValid = true;
+            const errors = [];
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const generalErrorDiv = document.getElementById('generalError');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!firstName) {
+                document.getElementById('firstNameError')?.classList.add('show');
+                errors.push('Ad alanı boş bırakılamaz.');
+                isValid = false;
+            } else {
+                document.getElementById('firstNameError')?.classList.remove('show');
+            }
+            if (!lastName) {
+                document.getElementById('lastNameError')?.classList.add('show');
+                errors.push('Soyad alanı boş bırakılamaz.');
+                isValid = false;
+            } else {
+                document.getElementById('lastNameError')?.classList.remove('show');
+            }
+            if (!email) {
+                document.getElementById('emailError')?.classList.add('show');
+                errors.push('E-posta alanı boş bırakılamaz.');
+                isValid = false;
+            } else if (!emailRegex.test(email)) {
+                document.getElementById('emailFormatError')?.classList.add('show');
+                errors.push('Geçerli bir e-posta adresi giriniz.');
+                isValid = false;
+            } else {
+                document.getElementById('emailFormatError')?.classList.remove('show');
+                document.getElementById('emailError')?.classList.remove('show');
+            }
+            // Şifre kontrolü: sadece biri doluysa kuralları uygula
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+            if (newPassword || confirmPassword) {
+                if (newPassword) {
+                    if (!passwordRegex.test(newPassword)) {
+                        document.getElementById('passwordRequirementError')?.classList.add('show');
+                        errors.push('Şifre en az 8 karakter, bir büyük harf, bir küçük harf ve bir rakam içermelidir.');
+                        isValid = false;
+                    } else {
+                        document.getElementById('passwordRequirementError')?.classList.remove('show');
+                    }
+                } else {
+                    document.getElementById('passwordRequirementError')?.classList.remove('show');
+                }
+                if (newPassword && newPassword !== confirmPassword) {
+                    document.getElementById('passwordError')?.classList.add('show');
+                    errors.push('Şifreler eşleşmiyor.');
+                    isValid = false;
+                } else {
+                    document.getElementById('passwordError')?.classList.remove('show');
+                }
+            } else {
+                document.getElementById('passwordRequirementError')?.classList.remove('show');
+                document.getElementById('passwordError')?.classList.remove('show');
+            }
+            const phoneRegex = /^5\d{2}\s\d{3}\s\d{2}\s\d{2}$/;
+            if (!phoneRegex.test(phone)) {
+                document.getElementById('phoneError')?.classList.add('show');
+                errors.push('Telefon numarası doğru formatta olmalı ve 5 ile başlamalı. (Örn: 555 123 45 67)');
+                isValid = false;
+            } else {
+                document.getElementById('phoneError')?.classList.remove('show');
+            }
+            if (!isValid) {
+                if (generalErrorDiv) {
+                    generalErrorDiv.innerHTML = '<ul style="margin:0; padding:0 1em; text-align:left;">' + errors.map(e => '<li>' + e + '</li>').join('') + '</ul>';
+                    generalErrorDiv.classList.add('show');
+                }
+                return false;
+            } else if (generalErrorDiv) {
+                generalErrorDiv.innerHTML = '';
+                generalErrorDiv.classList.remove('show');
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>

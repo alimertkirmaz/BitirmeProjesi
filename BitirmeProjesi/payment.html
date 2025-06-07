@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Ödeme | AristoCart">
+    <title>Ödeme | AristoCart</title>
+    <link rel="icon" type="image/png" href="images/ar2.png">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .nav-links {
+            margin-right: 55px;
+        }
+
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .payment-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .payment-form {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .card-details {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .btn-pay {
+            background: #000;
+            color: #fff;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+        }
+
+        .btn-pay:hover {
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <a href="index.html" class="logo">
+                    <img src="images/ar2.png" alt="AristoCart" class="logo-icon">
+                    ARISTOCART
+                </a>
+                <ul class="nav-links">
+                    <li><a href="index.html">Ana Sayfa</a></li>
+                    <li class="category-dropdown">
+                        <a href="#categories">Kategoriler</a>
+                        <div class="category-menu">
+                            <ul class="category-list">
+                                <li><a href="categories.html?category=bilgisayar">Bilgisayar</a></li>
+                                <li><a href="categories.html?category=bilgisayar-bileseni">Bilgisayar Bileşeni</a></li>
+                                <li><a href="categories.html?category=oyuncu-ekipmani">Oyuncu Ekipmanı</a></li>
+                                <li><a href="categories.html?category=kamera">Kamera</a></li>
+                                <li><a href="categories.html?category=yazici">Yazıcı</a></li>
+                                <li><a href="categories.html?category=arac-ekipmani">Araç Ekipmanı</a></li>
+                                <li><a href="categories.html?category=akilli-telefon">Akıllı Telefon</a></li>
+                                <li><a href="categories.html?category=tablet">Tablet</a></li>
+                                <li><a href="categories.html?category=giyilebilir-teknoloji">Giyilebilir Teknoloji</a></li>
+                                <li><a href="categories.html?category=ev-elektronigi">Ev Elektroniği</a></li>
+                                <li><a href="categories.html?category=ev-sinema-ses">Ev Sinema ve Ses Sistemi</a></li>
+                                <li><a href="categories.html?category=beyaz-esya">Beyaz Eşya</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li><a href="index.html#featured">Öne Çıkanlar</a></li>
+                    <li>
+                        <a href="cart.html" class="cart-link">
+                            <span class="cart-count">0</span>
+                            Sepetim
+                        </a>
+                    </li>
+                    <li><a href="login.html" class="login-link">Giriş Yap</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <div class="payment-container">
+        <!-- Sipariş özeti için payment-form benzeri div -->
+        <div class="payment-form">
+            <h2>Sipariş Özeti</h2>
+            <div id="order-summary">
+                <!-- JavaScript ile doldurulacak, ama başlık olmadan -->
+            </div>
+        </div>
+
+        <!-- Ödeme formu -->
+        <div class="payment-form">
+            <h2>Ödeme Bilgileri</h2>
+            <form id="payment-form">
+                <div class="form-group">
+                    <label for="cardHolder">Kart Üzerindeki Ad Soyad</label>
+                    <input type="text" id="cardHolder" required placeholder="Ad Soyad">
+                </div>
+
+                <div class="card-details">
+                    <div class="form-group">
+                        <label for="cardNumber">Kart Numarası</label>
+                        <input type="text" id="cardNumber" required placeholder="1234 5678 9012 3456">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="expiryDate">Son Kullanma Tarihi</label>
+                        <input type="text" id="expiryDate" required placeholder="AA/YY">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cvv">CVV</label>
+                        <input type="text" id="cvv" maxlength="3" pattern="\d{3}" required placeholder="123">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="address">Teslimat Adresi</label>
+                    <input type="text" id="address" required>
+                </div>
+
+                <button type="submit" class="btn-pay">Ödemeyi Tamamla</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Ödeme Sonuç Modalı -->
+    <div id="paymentModal" class="payment-modal">
+        <div class="modal-content">
+            <img src="images/ar2.png" alt="AristoCart" class="modal-logo">
+            <div class="modal-icon">
+                <div class="success-icon hidden">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="error-icon hidden">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+            </div>
+            <h3 class="modal-title"></h3>
+            <p class="modal-message"></p>
+            <button class="modal-close">Tamam</button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>ARISTOCART</h4>
+                    <p>Lüks alışverişin adresi</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Hızlı Linkler</h4>
+                    <ul>
+                        <li><a href="index.html#categories">Kategoriler</a></li>
+                        <li><a href="index.html#featured">Öne Çıkanlar</a></li>
+                        <li><a href="#">Hakkımızda</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>İletişim</h4>
+                    <p>Email: info@aristocart.com</p>
+                    <p>Tel: +90 212 555 55 55</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="payment.js"></script>
+</body>
+</html>

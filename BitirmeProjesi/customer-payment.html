@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Ödeme | AristoCart">
+    <title>Ödeme | AristoCart</title>
+    <link rel="icon" type="image/png" href="images/ar2.png">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Özel Çıkış Onay Modalı */
+        #exitConfirmModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .exit-confirm-content {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .exit-confirm-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .exit-confirm-button {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        #exitConfirmStay {
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        
+        #exitConfirmLeave {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        #exitConfirmStay:hover {
+            background-color: #e2e6ea;
+        }
+        
+        #exitConfirmLeave:hover {
+            background-color: #c82333;
+        }
+    </style>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .payment-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .payment-form {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .card-details {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .btn-pay {
+            background: #000;
+            color: #fff;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+        }
+
+        .btn-pay:hover {
+            background: #333;
+        }
+        
+        /* Modal Styles */
+        .payment-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-logo {
+            width: 60px;
+            margin-bottom: 15px;
+        }
+        
+        .modal-icon {
+            font-size: 60px;
+            margin: 15px 0;
+        }
+        
+        .success-icon {
+            color: #28a745;
+        }
+        
+        .error-icon {
+            color: #dc3545;
+        }
+        
+        .warning-icon {
+            color: #ffc107;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .modal-title {
+            font-size: 24px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .modal-message {
+            margin-bottom: 20px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .modal-close {
+            background-color: #000;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        .modal-close:hover {
+            background-color: #333;
+        }
+        
+        .modal-cancel {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        .modal-cancel:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <!-- Yükleniyor Ekranı -->
+    <div id="auth-loading" style="display:flex;justify-content:center;align-items:center;position:fixed;z-index:9999;top:0;left:0;width:100%;height:100vh;background-color:#1e1e1e;color:#c9a227;font-size:1.5rem;">Yükleniyor...</div>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<script src="firebase-init.js"></script>
+    <!-- Navbar -->
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <a href="customer-panel.html" class="logo">
+                    <img src="images/ar2.png" alt="AristoCart" class="logo-icon">
+                    ARISTOCART
+                </a>
+                <ul class="nav-links">
+                    <li><a href="customer-panel.html">Ana Sayfa</a></li>
+                    <li class="category-dropdown">
+                        <a href="customer-panel.html#categories">Kategoriler</a>
+                        <div class="category-menu">
+                            <ul class="category-list">
+                                <li><a href="customer-categories.html?category=bilgisayar">Bilgisayar</a></li>
+                                <li><a href="customer-categories.html?category=bilgisayar-bileseni">Bilgisayar Bileşeni</a></li>
+                                <li><a href="customer-categories.html?category=oyuncu-ekipmani">Oyuncu Ekipmanı</a></li>
+                                <li><a href="customer-categories.html?category=kamera">Kamera</a></li>
+                                <li><a href="customer-categories.html?category=yazici">Yazıcı</a></li>
+                                <li><a href="customer-categories.html?category=arac-ekipmani">Araç Ekipmanı</a></li>
+                                <li><a href="customer-categories.html?category=akilli-telefon">Akıllı Telefon</a></li>
+                                <li><a href="customer-categories.html?category=tablet">Tablet</a></li>
+                                <li><a href="customer-categories.html?category=giyilebilir-teknoloji">Giyilebilir Teknoloji</a></li>
+                                <li><a href="customer-categories.html?category=ev-elektronigi">Ev Elektroniği</a></li>
+                                <li><a href="customer-categories.html?category=ev-sinema-ses">Ev Sinema ve Ses Sistemi</a></li>
+                                <li><a href="customer-categories.html?category=beyaz-esya">Beyaz Eşya</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li><a href="customer-panel.html#featured">Öne Çıkanlar</a></li>
+                    <li>
+                        <a href="customer-cart.html" class="cart-link">
+                            <span class="cart-count">0</span>
+                            Sepetim
+                        </a>
+                    </li>
+                    <li class="customer-dropdown">
+                        <a href="#" class="customer-name" id="customerName">Müşteri Adı</a>
+                        <div class="customer-menu">
+                            <ul class="customer-list">
+                                <li><a href="customer-section.html#account">Hesap Bilgilerim</a></li>
+                                <li><a href="customer-section.html#addresses">Adreslerim</a></li>
+                                <li><a href="customer-section.html#orders">Siparişlerim</a></li>
+                                <li><a href="customer-section.html#favorites">Favorilerim</a></li>
+                                <li><a href="customer-section.html#notifications">Bildirimlerim</a></li>
+                                <li><a href="customer-section.html#saved-carts">Kayıtlı Sepetlerim</a></li>
+                                <li><a href="customer-section.html#support">Destek & SSS</a></li>
+                                <li><a href="index.html" onclick="localStorage.removeItem('currentUser')">Çıkış Yap</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <div class="payment-container">
+        <!-- Sipariş özeti için payment-form benzeri div -->
+        <div class="payment-form">
+            <h2>Sipariş Özeti</h2>
+            <div id="order-summary">
+                <!-- JavaScript ile doldurulacak, ama başlık olmadan -->
+            </div>
+        </div>
+
+        <!-- Ödeme formu -->
+        <div class="payment-form">
+            <h2>Ödeme Bilgileri</h2>
+            <form id="payment-form">
+                <div class="form-group">
+                    <label for="cardHolder">Kart Üzerindeki Ad Soyad</label>
+                    <input type="text" id="cardHolder" required placeholder="Ad Soyad">
+                </div>
+
+                <div class="card-details">
+                    <div class="form-group">
+                        <label for="cardNumber">Kart Numarası</label>
+                        <input type="text" id="cardNumber" required placeholder="1234 5678 9012 3456">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="expiryDate">Son Kullanma Tarihi</label>
+                        <input type="text" id="expiryDate" required placeholder="AA/YY">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cvv">CVV</label>
+                        <input type="text" id="cvv" maxlength="3" pattern="\d{3}" required placeholder="123">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="delivery-address">Teslimat Adresi</label>
+                    <div class="custom-dropdown" id="delivery-address-dropdown">
+                        <div class="dropdown-selected" id="delivery-address-selected">
+                            <span class="dropdown-selected-text">Adres seçiniz</span>
+                            <span class="dropdown-arrow"></span>
+                        </div>
+                        <ul class="dropdown-list" id="delivery-address-list"></ul>
+                    </div>
+                </div>
+                <div class="error-message" id="delivery-address-error" style="display:none;color:#c00;font-size:0.95rem; margin-bottom: 20px;"></div>
+                <div class="form-group">
+                    <label for="invoice-address">Fatura Adresi</label>
+                    <div class="custom-dropdown" id="invoice-address-dropdown">
+                        <div class="dropdown-selected" id="invoice-address-selected">
+                            <span class="dropdown-selected-text">Adres seçiniz</span>
+                            <span class="dropdown-arrow"></span>
+                        </div>
+                        <ul class="dropdown-list" id="invoice-address-list"></ul>
+                    </div>
+                </div>
+                <div class="error-message" id="invoice-address-error" style="display:none;color:#c00;font-size:0.95rem; margin-bottom: 20px;"></div>
+
+                <style>
+                .custom-dropdown {
+                    position: relative;
+                    user-select: none;
+                }
+                .dropdown-selected {
+                    border: 1px solid #ccc;
+                    padding: 10px 40px 10px 10px;
+                    border-radius: 4px;
+                    background: #fff;
+                    color: #333;
+                    font-size: 1rem;
+                    cursor: pointer;
+                    position: relative;
+                    min-height: 38px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                }
+                .dropdown-selected-text {
+                    color: #333;
+                    font-size: 1rem;
+                }
+                .dropdown-arrow {
+                    display: inline-block;
+                    width: 0;
+                    height: 0;
+                    margin-left: 8px;
+                    border-left: 7px solid transparent;
+                    border-right: 7px solid transparent;
+                    border-bottom: 10px solid var(--gold);
+                    /* Altın rengi */
+                    transition: transform 0.2s;
+                    position: absolute;
+                    right: 15px;
+                    top: 50%;
+                    transform: translateY(-50%) rotate(180deg);
+                    /* Yukarı bakacak şekilde */
+                }
+                .custom-dropdown.active .dropdown-arrow {
+                    transform: translateY(-50%) rotate(0deg);
+                    /* Açıkken aşağı bakacak */
+                }
+                .dropdown-list {
+                    display: none;
+                    position: absolute;
+                    left: 0;
+                    right: 0;
+                    bottom: 110%;
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    z-index: 100;
+                    max-height: 180px;
+                    overflow-y: auto;
+                    margin: 0;
+                    padding: 0;
+                    list-style: none;
+                }
+                .dropdown-list li {
+                    padding: 10px;
+                    cursor: pointer;
+                }
+                .dropdown-list li:hover {
+                    background: #f0f0f0;
+                }
+                .custom-dropdown.active .dropdown-list {
+                    display: block;
+                    animation: dropdownUp 0.2s ease;
+                }
+                @keyframes dropdownUp {
+                    from { transform: translateY(30px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+                </style>
+
+                <script>
+                // Örnek adres listeleri (gerekirse Firestore'dan dinamik alınabilir)
+                const deliveryAddresses = [
+                    "Ev - İstanbul, Kadıköy, Moda Sk. 7/2",
+                    "İş - İstanbul, Ataşehir, Plaza Cad. 5/10",
+                    "Aile - Ankara, Çankaya, Atatürk Bul. 23"
+                ];
+                const invoiceAddresses = [
+                    "Ev - İstanbul, Kadıköy, Moda Sk. 7/2",
+                    "Ofis - Ankara, Kızılay, Meşrutiyet Cd. 12/4"
+                ];
+                function setupDropdown(dropdownId, listId, selectedId, options) {
+                    const dropdown = document.getElementById(dropdownId);
+                    const list = document.getElementById(listId);
+                    const selected = document.getElementById(selectedId);
+                    // Listeyi doldur
+                    list.innerHTML = options.map(opt => `<li>${opt}</li>`).join("");
+                    // Tıklayınca aç/kapat
+                    selected.onclick = function(e) {
+                        e.stopPropagation();
+                        dropdown.classList.toggle("active");
+                    };
+                    // Seçim
+                    list.querySelectorAll("li").forEach(li => {
+                        li.onclick = function(e) {
+                            selected.textContent = this.textContent;
+                            dropdown.classList.remove("active");
+                            selected.setAttribute("data-value", this.textContent);
+                        };
+                    });
+                }
+                document.addEventListener("DOMContentLoaded", function() {
+                    setupDropdown("delivery-address-dropdown", "delivery-address-list", "delivery-address-selected", deliveryAddresses);
+                    setupDropdown("invoice-address-dropdown", "invoice-address-list", "invoice-address-selected", invoiceAddresses);
+                    // Açık dropdown dışında bir yere tıklanırsa kapat
+                    document.addEventListener("click", function() {
+                        document.querySelectorAll('.custom-dropdown.active').forEach(dd => dd.classList.remove('active'));
+                    });
+                });
+                </script>
+
+
+                <button type="submit" class="btn-pay">Ödemeyi Tamamla</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Ödeme Sonuç Modalı -->
+    <div id="paymentModal" class="payment-modal">
+        <div class="modal-content">
+            <img src="images/ar2.png" alt="AristoCart" class="modal-logo">
+            <div class="modal-icon">
+                <div class="success-icon hidden">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="error-icon hidden">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+            </div>
+            <h3 class="modal-title"></h3>
+            <p class="modal-message"></p>
+            <button class="modal-close">Tamam</button>
+        </div>
+    </div>
+    
+    <!-- Sayfa Çıkış Onay Modalı -->
+    <div id="exitConfirmModal" class="payment-modal">
+        <div class="modal-content">
+            <img src="images/ar2.png" alt="AristoCart" class="modal-logo">
+            <div class="modal-icon">
+                <div class="warning-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+            <h3 class="modal-title">Sayfadan Ayrılmak İstediğinize Emin Misiniz?</h3>
+            <p class="modal-message">Ödeme işleminiz tamamlanmadı. Sayfadan ayrılırsanız, sepetinizdeki ürünlerin <br>rezervasyonu iptal edilecektir.</p>
+            <div class="modal-buttons">
+                <button id="exitConfirmCancel" class="modal-cancel">İptal</button>
+                <button id="exitConfirmOk" class="modal-close">Sayfadan Ayrıl</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>ARISTOCART</h4>
+                    <p>Lüks alışverişin adresi</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Hızlı Linkler</h4>
+                    <ul>
+                        <li><a href="index.html#categories">Kategoriler</a></li>
+                        <li><a href="index.html#featured">Öne Çıkanlar</a></li>
+                        <li><a href="#">Hakkımızda</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>İletişim</h4>
+                    <p>Email: info@aristocart.com</p>
+                    <p>Tel: +90 212 555 55 55</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Çıkış Onay Modalı -->
+    <div id="exitConfirmModal">
+        <div class="exit-confirm-content">
+            <h3>Uyarı!</h3>
+            <p>Sayfadan ayrılıyorsunuz. Yaptığınız değişiklikler kaydedilmeyebilir.</p>
+            <p>Çıkmak istediğinize <br>emin misiniz?</p>
+            <div class="exit-confirm-buttons">
+                <button id="exitConfirmStay" class="exit-confirm-button">İptal</button>
+                <button id="exitConfirmLeave" class="exit-confirm-button" onclick="handleExitConfirmation()">Çık</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Çıkış onay modalı ve durum değişkenleri
+        let isLeaving = false;
+        let targetUrl = '';
+        
+        // Çıkış onayı işlemi
+        async function handleExitConfirmation() {
+            const exitButton = document.getElementById('exitConfirmLeave');
+            const originalText = exitButton.textContent;
+            
+            try {
+                // Butonu devre dışı bırak ve yükleniyor durumuna getir
+                exitButton.disabled = true;
+                exitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İşleniyor...';
+                
+                // Rezervasyon ID'sini al
+                const reservationId = getStockReservationId();
+                
+                // Eğer rezervasyon yapıldıysa iptal et
+                if (reservationId) {
+                    console.log('Rezervasyon iptal ediliyor:', reservationId);
+                    const result = await cancelStockReservation(reservationId);
+                    
+                    if (result && result.success) {
+                        console.log('Rezervasyon başarıyla iptal edildi');
+                    } else {
+                        console.warn('Rezervasyon iptal edilirken sorun oluştu:', result?.error || 'Bilinmeyen hata');
+                    }
+                }
+                
+                // Sayfadan çıkış işlemini başlat
+                isLeaving = true;
+                exitModal.style.display = 'none';
+                
+                // 500ms bekle ve yönlendir
+                setTimeout(() => {
+                    window.location.href = targetUrl || 'index.html';
+                }, 500);
+                
+            } catch (error) {
+                console.error('Çıkış işlemi sırasında hata oluştu:', error);
+                // Hata durumunda bile kullanıcıyı yönlendir
+                isLeaving = true;
+                exitModal.style.display = 'none';
+                window.location.href = targetUrl || 'index.html';
+            } finally {
+                // Butonu eski haline getir
+                exitButton.disabled = false;
+                exitButton.textContent = originalText;
+            }
+        }
+        const exitModal = document.getElementById('exitConfirmModal');
+        const exitStayBtn = document.getElementById('exitConfirmStay');
+        const exitLeaveBtn = document.getElementById('exitConfirmLeave');
+        
+        // Tüm dış bağlantıları bul ve click olayı ekle
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tüm <a> etiketlerini bul
+            const links = document.querySelectorAll('a');
+            links.forEach(link => {
+                // Eğer bağlantı mevcut sayfaya değilse
+                if (link.href && !link.href.includes('customer-payment.html')) {
+                    link.addEventListener('click', handleLinkClick);
+                }
+            });
+            
+            // Form submit olaylarını dinle
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', handleFormSubmit);
+            });
+            
+            // Modal butonlarına event listener ekle
+            if (exitStayBtn && exitLeaveBtn) {
+                exitStayBtn.addEventListener('click', () => {
+                    exitModal.style.display = 'none';
+                    isLeaving = false;
+                });
+                
+                exitLeaveBtn.addEventListener('click', () => {
+                    isLeaving = true;
+                    exitModal.style.display = 'none';
+                    window.location.href = targetUrl || 'index.html';
+                });
+            }
+        });
+        
+        // Bağlantı tıklama işleyicisi
+        function handleLinkClick(e) {
+            // Eğer zaten çıkmak üzereysek veya ödeme tamamlandıysa devam et
+            if (isLeaving || window.paymentCompleted) return;
+            
+            // Varsayılan davranışı engelle
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Hedef URL'yi kaydet ve modalı göster
+            targetUrl = this.href;
+            exitModal.style.display = 'flex';
+        }
+        
+        // Form gönderim işleyicisi
+        function handleFormSubmit(e) {
+            // Eğer zaten çıkmak üzereysek veya ödeme tamamlandıysa devam et
+            if (isLeaving || window.paymentCompleted) return true;
+            
+            // Formun action özelliğini kontrol et
+            const formAction = this.getAttribute('action') || '';
+            if (formAction && !formAction.includes('customer-payment.html')) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Hedef URL'yi kaydet ve modalı göster
+                targetUrl = formAction;
+                exitModal.style.display = 'flex';
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // Tarayıcı uyarılarını tamamen devre dışı bırak
+        window.onbeforeunload = null;
+        
+        // Sayfa kapatılırken veya yenilenirken çalışacak kod
+        window.addEventListener('beforeunload', function(e) {
+            // Eğer çıkış onaylandıysa veya ödeme tamamlandıysa devam et
+            if (isLeaving || window.paymentCompleted) return undefined;
+            
+            // Tüm tarayıcı uyarılarını engelle
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+            
+            // Sayfa gizlendiğinde temizlik yap
+            if (document.visibilityState === 'hidden' || document.visibilityState === 'unloaded') {
+                if (window.cleanupBeforeExit && typeof window.cleanupBeforeExit === 'function') {
+                    window.cleanupBeforeExit();
+                }
+            }
+            
+            // Tarayıcıya hiçbir uyarı göstermemesini söyle
+            return undefined;
+        }, true);
+        
+        // Sayfa görünürlük değişikliklerini dinle
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') {
+                if (window.cleanupBeforeExit && typeof window.cleanupBeforeExit === 'function') {
+                    window.cleanupBeforeExit();
+                }
+            }
+        });
+    </script>
+    <script src="script.js"></script>
+    <script src="customer-payment.js"></script>
+</body>
+</html>

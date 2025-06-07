@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Kullanıcı Yönetimi | AristoCart">
+    <title>Kullanıcı Yönetimi | AristoCart</title>
+    <style>
+        /* Reset CSS */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .site-name {
+            color: #c9a227;
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            color: #c9a227;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 280px;
+            background-color: #000;
+            height: 100vh;
+            position: fixed;
+            padding: 2rem 0;
+            border-right: 1px solid rgba(201, 162, 39, 0.1);
+        }
+
+        .sidebar-logo {
+            padding: 0 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .sidebar-logo img {
+            width: 100%;
+            height: auto;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            color: #c9a227;
+            text-decoration: none;
+            padding: 1rem 2rem;
+            display: block;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(201, 162, 39, 0.1);
+            border-left: 3px solid #c9a227;
+        }
+
+        .nav-link.active {
+            background-color: rgba(201, 162, 39, 0.1);
+            border-left: 3px solid #c9a227;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            width: calc(100% - 280px);
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(201, 162, 39, 0.1);
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+        }
+
+        .admin-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .admin-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #c9a227;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+        }
+
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            background-color: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(201, 162, 39, 0.1);
+        }
+
+        .data-table th {
+            background-color: rgba(201, 162, 39, 0.1);
+            font-weight: normal;
+        }
+
+        /* Button Styles */
+        .btn {
+            background-color: #c9a227;
+            color: #000;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #b38e22;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        /* Search and Actions Bar */
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            flex: 1;
+            max-width: 500px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            background-color: #000;
+            border: 1px solid rgba(201, 162, 39, 0.1);
+            color: #c9a227;
+            border-radius: 4px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #c9a227;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: #1a1a1a;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid rgba(201, 162, 39, 0.1);
+            position: relative;
+            margin: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: #c9a227;
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.5rem;
+            background-color: #000;
+            border: 1px solid rgba(201, 162, 39, 0.1);
+            color: #c9a227;
+            border-radius: 4px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #c9a227;
+        }
+
+        .modal-footer {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="images/ar2.png" alt="Admin Logo">
+        </div>
+        <div class="site-name">ARISTOCART</div>
+        <nav>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="admin-panel.html" class="nav-link">Ana Sayfa</a>
+                </li>
+                <li class="nav-item">
+                    <a href="user-management.html" class="nav-link active">Kullanıcılar</a>
+                </li>
+                <li class="nav-item">
+                    <a href="product-management.html" class="nav-link">Ürünler</a>
+                </li>
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">Çıkış Yap</a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="header">
+            <h1 class="header-title">KULLANICI YÖNETİMİ</h1>
+            <div class="admin-info">
+                <span>Admin</span>
+                <div class="admin-avatar">A</div>
+            </div>
+        </header>
+
+        <!-- Actions Bar -->
+        <div class="actions-bar">
+            <div class="search-bar">
+                <input type="text" class="search-input" placeholder="Kullanıcı ara...">
+                <button class="btn">Ara</button>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Ad Soyad</th>
+                    <th>E-posta</th>
+                    <th>Rol</th>
+                    <th>Durum</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody id="usersTableBody">
+                <!-- Users will be loaded dynamically -->
+            </tbody>
+        </table>
+
+        <!-- Edit User Modal -->
+        <div id="editUserModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Kullanıcı Düzenle</h2>
+                    <button class="close-modal" onclick="closeModal('editUserModal')">&times;</button>
+                </div>
+                <form id="editUserForm">
+                    <input type="hidden" id="editUserIndex">
+                    <div class="form-group">
+                        <label for="editFirstName">Ad</label>
+                        <input type="text" id="editFirstName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editLastName">Soyad</label>
+                        <input type="text" id="editLastName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editEmail">E-posta</label>
+                        <input type="email" id="editEmail" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editRole">Rol</label>
+                        <select id="editRole" class="form-control">
+                            <option value="user">Kullanıcı</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editStatus">Durum</label>
+                        <select id="editStatus" class="form-control">
+                            <option value="active">Aktif</option>
+                            <option value="passive">Pasif</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" onclick="closeModal('editUserModal')">İptal</button>
+                        <button type="submit" class="btn">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+    <script type="module" src="user-management.js"></script>
+
+    <script>
+        // Modal functions
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = 'auto'; // Re-enable scrolling
+            }
+        }
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden'; // Prevent scrolling when modal is open
+            }
+        }
+
+        // Close modal when clicking outside the modal content
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
+                document.body.style.overflow = 'auto'; // Re-enable scrolling
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modals = document.querySelectorAll('.modal.active');
+                modals.forEach(modal => {
+                    modal.classList.remove('active');
+                    document.body.style.overflow = 'auto'; // Re-enable scrolling
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AristoCart">
+    <title>AristoCart</title>
+    <link rel="icon" type="image/png" href="images/ar2.png">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .customer-panel {
+            padding: 2rem;
+            margin-top: 80px;
+        }
+
+        .customer-side-menu {
+            background-color: #000;
+            border-radius: 8px;
+            padding: 1rem;
+            width: 300px;
+            position: fixed;
+            left: 0;
+            top: 80px;
+            bottom: 0;
+            overflow-y: auto;
+            border-right: 1px solid rgba(201, 162, 39, 0.1);
+        }
+
+        .customer-side-menu ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .customer-side-menu li {
+            margin-bottom: 0.5rem;
+        }
+
+        .customer-side-menu a {
+            color: #c9a227;
+            text-decoration: none;
+            padding: 0.8rem 1rem;
+            display: block;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .customer-side-menu a:hover {
+            background-color: rgba(201, 162, 39, 0.1);
+        }
+
+        .customer-side-menu h3 {
+            color: #c9a227;
+            font-size: 1.2rem;
+            margin: 1.5rem 1rem 1rem;
+            border-bottom: 1px solid rgba(201, 162, 39, 0.1);
+            padding-bottom: 0.5rem;
+        }
+
+        .customer-content {
+            margin-left: 320px;
+            padding: 2rem;
+            background-color: #000;
+            border-radius: 8px;
+            min-height: calc(100vh - 100px);
+        }
+
+        .customer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(201, 162, 39, 0.1);
+        }
+
+        .customer-name {
+            font-size: 1.5rem;
+            color: #c9a227;
+        }
+
+        .notification-badge {
+            background-color: #c9a227;
+            color: #000;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+
+        .menu-section {
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="auth-loading" style="display:flex;justify-content:center;align-items:center;height:100vh;color:#c9a227;font-size:1.5rem;">Yükleniyor...</div>
+    <script type="module">
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { app } from "./firebase-config.js";
+    const authLoading = document.getElementById('auth-loading');
+    const pageContent = Array.from(document.body.children).filter(el => el.id !== 'auth-loading');
+    pageContent.forEach(el => el.style.display = 'none');
+    const auth = getAuth(app);
+    const db = getFirestore(app); // <--- FIRESTORE MODÜLÜ EN ÜSTTE İMPORT EDİLDİ, BURADA TANIMLANDI
+    onAuthStateChanged(auth, async (user) => {
+        console.log('Giriş yapan kullanıcı:', user);
+        if (!user) {
+            window.location.href = "login.html";
+        } else {
+            // Firestore'dan ad-soyad çek
+            try {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    const fullName = `${data.firstName || ''}${data.firstName && data.lastName ? ' ' : ''}${data.lastName || ''}`.trim();
+                    document.getElementById('customerName').textContent = fullName || user.email || 'Müşteri';
+                    console.log('Firestore kullanıcı verisi:', data);
+                } else {
+                    document.getElementById('customerName').textContent = user.email || 'Müşteri';
+                    console.log('Firestore dokümanı yok, sadece email gösterildi');
+                }
+            } catch (err) {
+                document.getElementById('customerName').textContent = user.email || 'Müşteri';
+                console.error('Firestore kullanıcı verisi alınamadı:', err);
+            }
+            authLoading.style.display = 'none';
+            pageContent.forEach(el => el.style.display = '');
+        }
+    });
+        // Çıkış işlemi sadece Firebase Auth üzerinden yapılacak
+        document.addEventListener('DOMContentLoaded', () => {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    try {
+                        await auth.signOut();
+                        // Yönlendirme sadece onAuthStateChanged ile yapılacak.
+                    } catch (err) {
+                        
+                        console.error('Çıkış hatası:', err);
+                    }
+                });
+            }
+        });
+    </script>
+
+    <!-- Navbar -->
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <a href="customer-panel.html" class="logo">
+                    <img src="images/ar2.png" alt="AristoCart" class="logo-icon">
+                    ARISTOCART
+                </a>
+                <ul class="nav-links">
+                    <li><a href="customer-panel.html">Ana Sayfa</a></li>
+                    <li class="category-dropdown">
+                        <a href="customer-categories.html">Kategoriler</a>
+                        <div class="category-menu">
+                            <ul class="category-list">
+                                <li><a href="customer-categories.html?category=bilgisayar">Bilgisayar</a></li>
+                                <li><a href="customer-categories.html?category=bilgisayar-bileseni">Bilgisayar Bileşeni</a></li>
+                                <li><a href="customer-categories.html?category=oyuncu-ekipmani">Oyuncu Ekipmanı</a></li>
+                                <li><a href="customer-categories.html?category=kamera">Kamera</a></li>
+                                <li><a href="customer-categories.html?category=yazici">Yazıcı</a></li>
+                                <li><a href="customer-categories.html?category=arac-ekipmani">Araç Ekipmanı</a></li>
+                                <li><a href="customer-categories.html?category=akilli-telefon">Akıllı Telefon</a></li>
+                                <li><a href="customer-categories.html?category=tablet">Tablet</a></li>
+                                <li><a href="customer-categories.html?category=giyilebilir-teknoloji">Giyilebilir Teknoloji</a></li>
+                                <li><a href="customer-categories.html?category=ev-elektronigi">Ev Elektroniği</a></li>
+                                <li><a href="customer-categories.html?category=ev-sinema-ses">Ev Sinema ve Ses Sistemi</a></li>
+                                <li><a href="customer-categories.html?category=beyaz-esya">Beyaz Eşya</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li><a href="customer-panel.html#featured">Öne Çıkanlar</a></li>
+                    <li>
+                        <a href="customer-cart.html" class="cart-link">
+                            <span class="cart-count">0</span>
+                            Sepetim
+                        </a>
+                    </li>
+                    <li class="customer-dropdown">
+                        <a href="#" class="customer-name" id="customerName">Müşteri Adı</a>
+                        <div class="customer-menu">
+                            <ul class="customer-list">
+                                <li><a href="customer-section.html#account">Hesap Bilgilerim</a></li>
+                                <li><a href="customer-section.html#addresses">Adreslerim</a></li>
+                                <li><a href="customer-section.html#orders">Siparişlerim</a></li>
+                                <li><a href="customer-section.html#favorites">Favorilerim</a></li>
+                                <li><a href="customer-section.html#notifications">Bildirimlerim</a></li>
+                                <li><a href="customer-section.html#saved-carts">Kayıtlı Sepetlerim</a></li>
+                                <li><a href="customer-section.html#support">Destek & SSS</a></li>
+                                <li><a href="index.html" onclick="localStorage.removeItem('currentUser')">Çıkış Yap</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>ARISTOCART</h1>
+            <p>Seçkin Ürünler. Kusursuz Deneyim.</p>
+        </div>
+        <div class="slider-container">
+            <div class="slider">
+                <div class="slide">
+                    <img src="images/slider2.jpg" alt="Slider 1">
+                </div>
+                <div class="slide">
+                    <img src="images/slider3.jpg" alt="Slider 2">
+                </div>
+                <div class="slide">
+                    <img src="images/slider1.jpg" alt="Slider 3">
+                </div>
+                <div class="slide">
+                    <img src="images/slider4.jpg" alt="Slider 4">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section id="categories" class="categories">
+        <div class="container">
+            <h2>KATEGORİLER</h2>
+            <div class="category-slider-container">
+                <div class="category-slider">
+                    <div class="category-card">
+                        <a href="customer-categories.html?category=bilgisayar"><img src="images/slider2.jpg" alt="b1"></a>
+                        <h3>Bilgisayar</h3>
+                    </div>
+                    <div class="category-card">
+                        <a href="customer-categories.html?category=oyuncu-ekipmani"><img src="images/slider3.jpg" alt="oe1"></a>
+                        <h3>Oyuncu Ekipmanı</h3>
+                    </div>
+                    <div class="category-card">
+                        <a href="customer-categories.html?category=kamera"><img src="images/slider1.jpg" alt="k1"></a>
+                        <h3>Kamera</h3>
+                    </div>
+                    <div class="category-card">
+                        <a href="customer-categories.html?category=bilgisayar-bileseni"><img src="images/slider4.jpg" alt="bb1"></a>
+                        <h3>Bilgisayar Bileşeni</h3>
+                    </div>
+                    <div class="category-card">
+                        <a href="customer-categories.html?category=ev-elektronigi"><img src="images/ef448c28-7735-4822-8c86-5e96be244873-360x250.png" alt="b2"></a>
+                        <h3>Ev Elektroniği</h3>
+                    </div>
+                    <div class="category-card">
+                        <a href="customer-categories.html?category=akilli-telefon"><img src="images/sleek-and-contemporary-smartphone-design-with-blank-screen-mockup-in-3d-rendering-on-black-background_9833608.jpg" alt="oe2"></a>
+                        <h3>Akıllı Telefon</h3>
+                    </div>
+                    <div class="category-card">
+                        <a href="customer-categories.html?category=giyilebilir-teknoloji"><img src="images/1920x1080-beko-giyilebilir-teknoloji.webp" alt="k2"></a>
+                        <h3>Giyilebilir Teknoloji</h3>
+                    </div>
+                    <div class="category-card">
+                        <a href="customer-categories.html?category=tablet"><img src="images/4VbtLUT2kpFHLXDWbmBG.png" alt="bb2"></a>
+                        <h3>Tablet</h3>
+                    </div>
+                    <div class="category-card">
+                        <a href="customer-categories.html?category=yazici"><img src="images/dark-printer.jpg" alt="b3"></a>
+                        <h3>Yazıcı</h3>
+                    </div>
+                    <div class="category-card">
+                        <a href="customer-categories.html?category=ev-sinema-ses"><img src="images/Ev-Sinema-Sistemi-Görsel-800x563.jpg" alt="oe3"></a>
+                        <h3>Ev Sinema ve Ses Sistemi</h3>
+                    </div>
+                    <div class="category-card">
+                        <a href="customer-categories.html?category=beyaz-esya"><img src="images/110000484772422.jpg" alt="k3"></a>
+                        <h3>Beyaz Eşya</h3>
+                    </div>
+                    <div class="category-card">
+                        <a href="customer-categories.html?category=arac-ekipmani"><img src="images/fb1e7ed2-6b1f-4982-b7fa-e00bd3af751e.webp" alt="bb3"></a>
+                        <h3>Araç Ekipmanı</h3>
+                    </div>
+                </div>
+                <div class="category-dots"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Products -->
+    <section id="featured" class="featured-products">
+        <div class="container">
+            <h2>ÖNE ÇIKAN ÜRÜNLER</h2>
+            <div class="products-grid">
+                <div class="product" data-id="1">
+                    <div class="product-image">
+                        <img src="images/camera_glare_reflection_195277_1280x720.jpg" alt="Ürün 1">
+
+                    </div>
+                    <div class="product-info">
+                        <h3>Sony PXW-Z150</h3>
+                        <p class="price">350,00 TL</p>
+                        <button class="btn-view" onclick="location.href='http://127.0.0.1:5500/customer-product-page.html?id=XHI02w4lHlkt1nrbfOz3'">İncele</button>
+                    </div>
+                </div>
+
+                <div class="product" data-id="2">
+                    <div class="product-image">
+                        <img src="images/slider2.jpg" alt="Ürün 2">
+
+                    </div>
+                    <div class="product-info">
+                        <h3>Monster Abra A5 V20.4.1</h3>
+                        <p class="price">349,00* TL</p>
+                        <button class="btn-view" onclick="location.href='http://127.0.0.1:5500/customer-product-page.html?id=gswQBN6LdnvsKUVC7Fm8'">İncele</button>
+                    </div>
+                </div>
+
+                <div class="product" data-id="3">
+                    <div class="product-image">
+                        <img src="images/backlight_neon_electronics_144683_1280x720.jpg" alt="Ürün 3">
+
+                    </div>
+                    <div class="product-info">
+                        <h3>Stepgamer Gaming Backlight</h3>
+                        <p class="price">120,00 TL</p>
+                        <button class="btn-view" onclick="location.href='http://127.0.0.1:5500/customer-product-page.html?id=M6HP0jI7c19XFESrcttT'">İncele</button>
+                    </div>
+                </div>
+
+                <div class="product" data-id="4">
+                    <div class="product-image">
+                        <img src="images/keyboard_backlight_light_159518_1280x720.jpg" alt="Ürün 4">
+
+                    </div>
+                    <div class="product-info">
+                        <h3>Everest KB-73M</h3>
+                        <p class="price">255,00 TL</p>
+                        <button class="btn-view" onclick="location.href='http://127.0.0.1:5500/customer-product-page.html?id=5X4hLaCma6Ba9nI18HWL'">İncele</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+        <!-- Footer -->
+        <footer>
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-section">
+                        <h4>ARISTOCART</h4>
+                        <p>Lüks alışverişin adresi</p>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Hızlı Linkler</h4>
+                        <ul>
+                            <li><a href="#categories">Kategoriler</a></li>
+                            <li><a href="#featured">Öne Çıkanlar</a></li>
+                            <li><a href="#">Hakkımızda</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h4>İletişim</h4>
+                        <p>Email: info@aristocart.com</p>
+                        <p>Tel: +90 212 555 55 55</p>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    
+        <!-- Firebase SDK'ları -->
+        <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+        
+        <!-- Firebase yapılandırması -->
+        <script>
+            // Firebase yapılandırması
+            const firebaseConfig = {
+                apiKey: "AIzaSyCYRT1tz8QMog2Vd9oC-rA3Fne6AADKOQ0",
+                authDomain: "bitirmeprojesi-de1e8.firebaseapp.com",
+                projectId: "bitirmeprojesi-de1e8",
+                storageBucket: "bitirmeprojesi-de1e8.appspot.com",
+                messagingSenderId: "578825018900",
+                appId: "1:578825018900:web:b2fb992ecb7a7bc301d101"
+            };
+            
+            // Firebase'i başlat
+            if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+            // Çıkış işlemi sadece Firebase Auth üzerinden yapılacak
+        document.addEventListener('DOMContentLoaded', () => {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    try {
+                        await auth.signOut();
+                        // Yönlendirme sadece onAuthStateChanged ile yapılacak.
+                    } catch (err) {
+                        
+                        console.error('Çıkış hatası:', err);
+                    }
+                });
+            }
+        });
+    </script>
+        
+        <script type="module" src="customer-cart.js"></script>
+        <script src="script.js"></script>
+        <script type="module" src="logout.js"></script>
+    </body>
+</html>
